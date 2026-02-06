@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Tati Arcade</title>
+  <title>Tati Arcade — Pokémon Mode</title>
   <style>
     :root{
       --bg1:#12062a; --bg2:#2c0750;
@@ -26,11 +26,13 @@
       overflow:hidden;
     }
 
-    /* Top HUD */
+    canvas{ width:100vw; height:100vh; display:block; image-rendering: pixelated; }
+
+    /* HUD */
     .ui{
       position:fixed; left:14px; right:14px; top:14px;
-      display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; align-items:flex-end;
-      pointer-events:none; z-index:10;
+      display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      z-index:10; pointer-events:none;
     }
     .bar{
       pointer-events:auto;
@@ -52,57 +54,43 @@
     }
     .pill.ok{border-color:rgba(82,255,168,.28); background:rgba(82,255,168,.10); color:#dcffe9}
     .pill.warn{border-color:rgba(255,211,106,.28); background:rgba(255,211,106,.10); color:#ffe7b8}
-    .pill.bad{border-color:rgba(255,90,120,.28); background:rgba(255,90,120,.10); color:#ffd7df}
+
     .btn{
       pointer-events:auto;
       border:none; border-radius:14px;
       padding:10px 12px; font-weight:900; cursor:pointer;
       background:linear-gradient(180deg, rgba(184,107,255,.98), rgba(255,92,200,.85));
       color:#190424;
-      transition:filter .12s ease, transform .12s ease;
     }
-    .btn:active{transform:scale(.98)}
     .btn.ghost{
       background:rgba(255,255,255,.10);
       border:1px solid var(--bd);
       color:var(--tx);
     }
 
-    canvas{
-      width:100vw; height:100vh;
-      display:block;
-      image-rendering: pixelated;
-    }
-
-    /* Touch controls (MOBILE-FIRST BIG) */
+    /* Touch controls */
     .touch{
       position:fixed; left:14px; right:14px; bottom:14px;
       display:flex; justify-content:space-between; gap:14px;
-      z-index:20;
-      pointer-events:none;
+      z-index:20; pointer-events:none;
     }
     .joy, .act{pointer-events:auto}
     .joy{
-      width:170px; height:170px;
-      border-radius:999px;
+      width:170px; height:170px; border-radius:999px;
       border:1px solid var(--bd);
       background:rgba(0,0,0,.16);
       backdrop-filter: blur(10px);
-      position:relative;
-      touch-action:none;
+      position:relative; touch-action:none;
     }
     .knob{
-      width:70px; height:70px;
-      border-radius:999px;
+      width:70px; height:70px; border-radius:999px;
       background:linear-gradient(180deg, rgba(255,92,200,.85), rgba(184,107,255,.85));
       position:absolute; left:50%; top:50%;
       transform:translate(-50%,-50%);
       border:1px solid rgba(255,255,255,.22);
       box-shadow:0 12px 26px rgba(0,0,0,.35);
     }
-    .act{
-      display:flex; flex-direction:column; gap:10px; align-items:flex-end;
-    }
+    .act{display:flex; flex-direction:column; gap:10px; align-items:flex-end;}
     .aBtn{
       width:98px; height:98px; border-radius:24px;
       border:none; cursor:pointer;
@@ -120,7 +108,7 @@
     }
     @media (min-width: 900px){ .touch{display:none} }
 
-    /* Overlay base */
+    /* Overlays */
     .overlay{
       position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
       padding:18px; z-index:30;
@@ -128,7 +116,7 @@
       backdrop-filter: blur(6px);
     }
     .card{
-      width:min(720px,100%);
+      width:min(780px,100%);
       border-radius:20px;
       border:1px solid var(--bd);
       background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.10));
@@ -138,25 +126,183 @@
     .card h1{margin:0; font-size:22px}
     .card p{margin:10px 0 0; color:var(--mt); line-height:1.5}
     .row{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
-    .big{font-size: clamp(22px, 3vw, 34px); margin:0; line-height:1.15}
     .sub{color:var(--mt)}
-    ul{margin:10px 0 0 18px}
-    li{margin:8px 0}
 
-    /* Confetti canvas */
+    /* Dialogue box (Pokémon vibe) */
+    .dialog{
+      position:fixed; left:14px; right:14px; bottom:14px;
+      z-index:25;
+      border-radius:20px;
+      border:1px solid var(--bd);
+      background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.10));
+      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      padding:14px;
+      display:none;
+    }
+    .dialog .name{font-weight:1000; margin-bottom:6px}
+    .dialog .text{color:rgba(255,255,255,.88); line-height:1.4}
+    .dialog .hint{margin-top:10px; color:rgba(255,255,255,.68); font-size:12px}
+
     #confetti{position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:40}
+
+    /* ===== WIN SCREEN (pixel vibe) ===== */
+    .pixel{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    .winOverlay{
+      position:fixed; inset:0;
+      display:none;
+      z-index:60;
+      background: rgba(0,0,0,.60);
+      backdrop-filter: blur(6px);
+      padding: 18px;
+      align-items:center;
+      justify-content:center;
+    }
+    .winCard{
+      width:min(520px, 100%);
+      border: 4px solid rgba(255,255,255,.85);
+      border-radius: 16px;
+      overflow:hidden;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      background: #000;
+    }
+    .winSky{
+      position:relative;
+      height: 320px;
+      background: linear-gradient(#79c8ff, #79c8ff);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+    }
+    .cloud{
+      position:absolute;
+      width: 92px; height: 36px;
+      background: rgba(255,255,255,.92);
+      border-radius: 8px;
+      opacity:.85;
+    }
+    .cloud:before, .cloud:after{
+      content:"";
+      position:absolute;
+      background: rgba(255,255,255,.92);
+      border-radius: 10px;
+    }
+    .cloud:before{ width:46px; height:26px; left:-18px; top:10px; }
+    .cloud:after{ width:52px; height:28px; right:-16px; top:6px; }
+    .c1{ top:34px; left:18px; transform:scale(1.05); }
+    .c2{ top:64px; right:22px; transform:scale(.95); }
+    .c3{ bottom:88px; left:44px; transform:scale(.9); }
+
+    .winText{
+      position:absolute;
+      top: 124px;
+      left:0; right:0;
+      text-align:center;
+      font-weight: 1000;
+      color: #ffd36a;
+      text-shadow: 0 3px 0 rgba(0,0,0,.55);
+      font-size: 28px;
+    }
+    .trophyBtn{
+      width: 110px;
+      height: 110px;
+      border: 4px solid rgba(0,0,0,.35);
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffd36a, #ffb84b);
+      box-shadow: 0 10px 0 rgba(0,0,0,.25), 0 18px 40px rgba(0,0,0,.25);
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:absolute;
+      top: 34px;
+      left:50%;
+      transform: translateX(-50%);
+      transition: transform .08s ease;
+    }
+    .trophyBtn:active{ transform: translateX(-50%) scale(.98); }
+    .trophyIcon{
+      font-size: 56px;
+      filter: drop-shadow(0 3px 0 rgba(0,0,0,.25));
+    }
+    .winGround{
+      padding: 14px;
+      background: linear-gradient(180deg, rgba(184,107,255,.18), rgba(255,92,200,.10));
+      border-top: 4px solid rgba(255,255,255,.35);
+    }
+    .winHint{
+      color: rgba(255,255,255,.90);
+      font-weight: 900;
+      text-align:center;
+      margin: 0;
+      font-size: 13px;
+    }
+    .winModal{
+      margin-top: 12px;
+      display:none;
+      padding: 14px;
+      border: 2px dashed rgba(255,255,255,.55);
+      border-radius: 14px;
+      background: rgba(0,0,0,.35);
+    }
+    .winQ{
+      margin:0;
+      color:#fff;
+      font-weight:1000;
+      font-size: 16px;
+      text-align:center;
+      text-transform:none;
+      letter-spacing:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    }
+    .winSub{
+      margin:10px 0 0;
+      text-align:center;
+      color: rgba(255,255,255,.75);
+      font-size: 12px;
+      line-height:1.4;
+      text-transform:none;
+      letter-spacing:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    }
+    .winBtns{
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-top: 12px;
+    }
+    .winYes{
+      border:none;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight:1000;
+      cursor:pointer;
+      background: linear-gradient(180deg, rgba(184,107,255,.98), rgba(255,92,200,.85));
+      color: #190424;
+    }
+    .winYes:active{ transform: scale(.98); }
+    .winClose{
+      border:1px solid rgba(255,255,255,.25);
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight:900;
+      cursor:pointer;
+      background: rgba(255,255,255,.10);
+      color: #fff;
+    }
   </style>
 </head>
 <body>
   <div class="ui">
     <div class="bar">
-      <span class="pill" id="lvl">Nivel: 1/3</span>
-      <span class="pill warn" id="goal">Objetivo: colecta 5 ★</span>
-      <span class="pill" id="score">Score: 0</span>
-      <span class="pill" id="combo">Combo: x1</span>
-      <span class="pill bad" id="hp">HP: 3</span>
-      <span class="pill" id="timer">Time: 30.0</span>
-      <span class="pill" id="dash">Dash: READY</span>
+      <span class="pill" id="mode">Modo: Pokémon</span>
+      <span class="pill warn" id="quest">Quest: 0/3 reliquias</span>
+      <span class="pill" id="inv">Inv: —</span>
     </div>
     <div class="bar">
       <button class="btn ghost" id="sound">Sound: OFF</button>
@@ -167,6 +313,12 @@
 
   <canvas id="c"></canvas>
   <canvas id="confetti"></canvas>
+
+  <div class="dialog" id="dialog">
+    <div class="name" id="dName">NPC</div>
+    <div class="text" id="dText">Texto…</div>
+    <div class="hint" id="dHint">Pulsa A pa’ continuar</div>
+  </div>
 
   <div class="touch" aria-hidden="true">
     <div class="joy" id="joy"><div class="knob" id="knob"></div></div>
@@ -179,108 +331,91 @@
   <!-- START OVERLAY -->
   <div class="overlay" id="start">
     <div class="card">
-      <h1>💜 Tati Arcade — Retro 2D (Mobile)</h1>
+      <h1>💜 Tati Arcade — Pokémon Mode</h1>
       <p>
         Cel: Joystick + botón <b>A</b><br>
-        PC: WASD/Flechas · <b>Espacio</b> = Dash/A<br><br>
-        Completa 3 niveles. Al final… hay un PR pendiente 😉
+        Objetivo: consigue <b>3 reliquias</b> y vuelve donde <b>Tati</b> pa’ ganar 🏆
       </p>
       <div class="row">
-        <button class="btn" id="play">Press Start</button>
-        <button class="btn ghost" id="how">Cómo se gana</button>
+        <button class="btn" id="play">Start</button>
+        <button class="btn ghost" id="how">Cómo jugar</button>
       </div>
       <p class="sub" id="howTxt" style="display:none;margin-top:10px">
-        Nivel 1: colecta 5 estrellas. Nivel 2: sobrevive + colecta 6. Nivel 3: mini boss + colecta 7.
+        Camina por el mapa. Acércate a un objeto (brilla) y pulsa A. Habla con NPCs igual.
       </p>
     </div>
   </div>
 
-  <!-- PR OVERLAY -->
-  <div class="overlay" id="pr" style="display:none">
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:flex-end">
-        <div>
-          <div class="pill">Pull Request — Girlfriend Mode 💜</div>
-          <h2 class="big" style="margin-top:10px;">feat: enable girlfriend_mode()</h2>
-          <p class="sub">repo: tati-arcade · lucas/heart-branch → main</p>
-        </div>
-        <div class="sub" style="text-align:right">
-          Developer: <b>Lucas</b><br>
-          Reviewer: <b>Tati</b>
-        </div>
+  <!-- ===== WIN OVERLAY (YOU WIN) ===== -->
+  <div class="winOverlay" id="winOverlay">
+    <div class="winCard">
+      <div class="winSky">
+        <div class="cloud c1"></div>
+        <div class="cloud c2"></div>
+        <div class="cloud c3"></div>
+
+        <button class="trophyBtn" id="trophyBtn" aria-label="Trophy">
+          <div class="trophyIcon">🏆</div>
+        </button>
+
+        <div class="winText pixel">YOU WIN!</div>
       </div>
 
-      <div class="row" style="margin-top:12px;">
-        <span class="pill ok">✅ checks passed</span>
-        <span class="pill">build: stable</span>
-        <span class="pill">latency: low</span>
-      </div>
+      <div class="winGround">
+        <p class="winHint pixel">TAP THE TROPHY</p>
 
-      <p style="margin-top:14px"><b>Mini changelog</b></p>
-      <ul>
-        <li><b>Added:</b> un feature que se llama “tú” y me mejora la vida.</li>
-        <li><b>Improved:</b> mi mood cuando te veo (sube FPS).</li>
-        <li><b>Fixed:</b> días raros → con tu risa se resetean.</li>
-      </ul>
+        <div class="winModal" id="winModal">
+          <p class="winQ">Tati… ¿quieres ser mi novia?</p>
+          <p class="winSub">“Acepto tus bugs y celebro tus versiones.”</p>
 
-      <div class="row" style="margin-top:14px;">
-        <button class="btn" id="merge">Merge 💜</button>
-        <button class="btn ghost" id="replay">Jugar otra vez</button>
-      </div>
-
-      <div id="mergeResult" style="display:none;margin-top:14px">
-        <div class="pill ok">🎉 Merged successfully</div>
-        <h2 class="big" style="margin-top:10px;">Tati… ¿quieres ser mi novia?</h2>
-        <p class="sub">“Acepto tus bugs y celebro tus versiones.”</p>
-        <div class="row" style="margin-top:12px;">
-          <button class="btn" id="yes">Sí 💜</button>
-          <button class="btn ghost" id="think">Déjame pensarlo 🙈</button>
+          <div class="winBtns">
+            <button class="winYes" id="winYes1">Sí</button>
+            <button class="winYes" id="winYes2">Sí</button>
+            <button class="winClose" id="winClose">Cerrar</button>
+          </div>
         </div>
-        <p class="sub" id="thinkTxt" style="display:none;margin-top:10px">
-          Está bien 😌 yo espero… pero ven acá, dame un “muak” primero.
-        </p>
       </div>
     </div>
   </div>
 
 <script>
 (() => {
-  const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d');
+  const c = document.getElementById('c');
+  const ctx = c.getContext('2d');
   const conf = document.getElementById('confetti');
   const cctx = conf.getContext('2d');
 
   const ui = {
-    lvl: document.getElementById('lvl'),
-    goal: document.getElementById('goal'),
-    score: document.getElementById('score'),
-    combo: document.getElementById('combo'),
-    hp: document.getElementById('hp'),
-    timer: document.getElementById('timer'),
-    dash: document.getElementById('dash'),
+    mode: document.getElementById('mode'),
+    quest: document.getElementById('quest'),
+    inv: document.getElementById('inv'),
     sound: document.getElementById('sound'),
     pause: document.getElementById('pause'),
-    restart: document.getElementById('restart')
+    restart: document.getElementById('restart'),
   };
 
   const startOv = document.getElementById('start');
-  const prOv = document.getElementById('pr');
   const playBtn = document.getElementById('play');
   const howBtn = document.getElementById('how');
   const howTxt = document.getElementById('howTxt');
 
-  const mergeBtn = document.getElementById('merge');
-  const replayBtn = document.getElementById('replay');
-  const mergeRes = document.getElementById('mergeResult');
-  const yesBtn = document.getElementById('yes');
-  const thinkBtn = document.getElementById('think');
-  const thinkTxt = document.getElementById('thinkTxt');
+  const dialog = document.getElementById('dialog');
+  const dName = document.getElementById('dName');
+  const dText = document.getElementById('dText');
+  const dHint = document.getElementById('dHint');
 
-  // --- Resize
+  // Win overlay refs
+  const winOverlay = document.getElementById('winOverlay');
+  const trophyBtn = document.getElementById('trophyBtn');
+  const winModal = document.getElementById('winModal');
+  const winYes1 = document.getElementById('winYes1');
+  const winYes2 = document.getElementById('winYes2');
+  const winClose = document.getElementById('winClose');
+
   function resize(){
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.floor(window.innerWidth * dpr);
-    canvas.height = Math.floor(window.innerHeight * dpr);
+    c.width = Math.floor(window.innerWidth * dpr);
+    c.height = Math.floor(window.innerHeight * dpr);
     ctx.setTransform(dpr,0,0,dpr,0,0);
 
     conf.width = Math.floor(window.innerWidth * dpr);
@@ -290,7 +425,7 @@
   window.addEventListener('resize', resize);
   resize();
 
-  // --- Audio beeps
+  // ===== Audio =====
   let soundOn = false;
   let audioCtx = null;
   function beep(freq=440, dur=0.06, type='square', vol=0.05){
@@ -310,27 +445,26 @@
     beep(740,0.08);
   });
 
-  // --- Input
+  // ===== Controls =====
   const keys = {up:false,down:false,left:false,right:false,a:false};
   let paused = false;
-  function setKey(name,val){ keys[name]=val; }
 
   window.addEventListener('keydown', (e)=>{
     const k = e.key.toLowerCase();
-    if(k==='arrowup'||k==='w') setKey('up',true);
-    if(k==='arrowdown'||k==='s') setKey('down',true);
-    if(k==='arrowleft'||k==='a') setKey('left',true);
-    if(k==='arrowright'||k==='d') setKey('right',true);
-    if(k===' ') { setKey('a',true); e.preventDefault(); }
+    if(k==='arrowup'||k==='w') keys.up=true;
+    if(k==='arrowdown'||k==='s') keys.down=true;
+    if(k==='arrowleft'||k==='a') keys.left=true;
+    if(k==='arrowright'||k==='d') keys.right=true;
+    if(k===' ') { keys.a=true; e.preventDefault(); }
     if(k==='p') paused = !paused;
   });
   window.addEventListener('keyup', (e)=>{
     const k = e.key.toLowerCase();
-    if(k==='arrowup'||k==='w') setKey('up',false);
-    if(k==='arrowdown'||k==='s') setKey('down',false);
-    if(k==='arrowleft'||k==='a') setKey('left',false);
-    if(k==='arrowright'||k==='d') setKey('right',false);
-    if(k===' ') setKey('a',false);
+    if(k==='arrowup'||k==='w') keys.up=false;
+    if(k==='arrowdown'||k==='s') keys.down=false;
+    if(k==='arrowleft'||k==='a') keys.left=false;
+    if(k==='arrowright'||k==='d') keys.right=false;
+    if(k===' ') keys.a=false;
   });
 
   // Touch joystick
@@ -341,7 +475,7 @@
 
   let joyActive=false, joyId=null;
   let joyVec={x:0,y:0};
-  const joyRadius = 64; // BIGGER for mobile
+  const joyRadius = 64;
 
   joy.addEventListener('pointerdown', (e)=>{
     joyActive=true; joyId=e.pointerId; joy.setPointerCapture(joyId);
@@ -372,404 +506,128 @@
   aBtn.addEventListener('pointerup', (e)=>{ e.preventDefault(); keys.a=false; });
   aBtn.addEventListener('pointercancel', ()=>{ keys.a=false; });
 
-  pBtn.addEventListener('click', ()=>{ paused = !paused; });
-  ui.pause.addEventListener('click', ()=>{ paused = !paused; });
-  ui.restart.addEventListener('click', ()=>{ startGame(); });
+  ui.pause.addEventListener('click', ()=> paused = !paused);
+  pBtn.addEventListener('click', ()=> paused = !paused);
+  ui.restart.addEventListener('click', ()=> startGame());
 
-  // --- Game core
+  // ===== Map (tile-based) =====
+  const TILE = 28;
+  const MAP_W = 28;
+  const MAP_H = 18;
+
+  const map = [];
+  for(let y=0;y<MAP_H;y++){
+    const row=[];
+    for(let x=0;x<MAP_W;x++){
+      let t=0;
+      const border = (x===0||y===0||x===MAP_W-1||y===MAP_H-1);
+      if(border) t=1;
+      if((x===10 && y>2 && y<14) || (y===7 && x>3 && x<24)) t=1;
+      if(!t && ((x+y)%11===0 || (x*y)%29===0)) t=2;
+      row.push(t);
+    }
+    map.push(row);
+  }
+  map[7][15]=0; map[7][16]=0; map[7][17]=0;
+
+  function isWall(tx,ty){
+    if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H) return true;
+    return map[ty][tx]===1;
+  }
+
+  // ===== Helpers =====
   const rnd=(a,b)=>a+Math.random()*(b-a);
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const dist2=(ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by; return dx*dx+dy*dy};
+  const dist=(ax,ay,bx,by)=>Math.hypot(ax-bx, ay-by);
 
+  // ===== Game State =====
   let game=null;
 
   function startGame(){
-    mergeRes.style.display='none';
-    thinkTxt.style.display='none';
-    prOv.style.display='none';
     startOv.style.display='none';
+    dialog.style.display='none';
+    winOverlay.style.display='none';
+    winModal.style.display='none';
     paused=false;
 
     game = {
       running:true,
-      level:1,
-      score:0,
-      combo:1,
-      hp:3,
-      time:30.0,
-      got:0,
-      need:[5,6,7],
-      dashCd:0,
-      shake:0,
-      particles:[],
-      player:{x:160,y:200,r:16,vx:0,vy:0,spd:250,inv:0}, // bigger + tuned
-      enemies:[],
-      stars:[]
-    };
-    spawnLevel();
-    updateUI();
-  }
-
-  function spawnLevel(){
-    const g=game;
-    g.got=0;
-    g.time = 30.0 - (g.level-1)*3;
-    g.combo = 1;
-    g.player.x = 160; g.player.y = 200; g.player.inv=0;
-    g.enemies=[];
-    g.stars=[];
-
-    // MOBILE difficulty: fewer enemies, softer speed
-    const enemyCount = 4 + g.level*2;
-    for(let i=0;i<enemyCount;i++){
-      g.enemies.push({
-        x:rnd(260, window.innerWidth-40),
-        y:rnd(120, window.innerHeight-40),
-        r: 12,
-        vx:rnd(70,150)*(Math.random()<0.5?-1:1),
-        vy:rnd(60,140)*(Math.random()<0.5?-1:1),
-        wob: rnd(0.8, 1.4)
-      });
-    }
-
-    const need = g.need[g.level-1];
-    for(let i=0;i<need;i++){
-      g.stars.push({x:rnd(260, window.innerWidth-40), y:rnd(120, window.innerHeight-40), r:10, alive:true});
-    }
-
-    ui.lvl.textContent = `Nivel: ${g.level}/3`;
-    ui.goal.textContent = `Objetivo: colecta ${need} ★`;
-  }
-
-  function updateUI(){
-    const g=game;
-    ui.score.textContent = `Score: ${g.score}`;
-    ui.combo.textContent = `Combo: x${g.combo}`;
-    ui.hp.textContent = `HP: ${g.hp}`;
-    ui.timer.textContent = `Time: ${g.time.toFixed(1)}`;
-
-    if(g.dashCd > 0){
-      ui.dash.textContent = `Dash: ${g.dashCd.toFixed(1)}s`;
-      ui.dash.className = 'pill warn';
-    } else {
-      ui.dash.textContent = 'Dash: READY';
-      ui.dash.className = 'pill ok';
-    }
-  }
-
-  function particle(x,y,col,n=12){
-    for(let i=0;i<n;i++){
-      game.particles.push({
-        x,y, vx:rnd(-180,180), vy:rnd(-220,120),
-        life:rnd(0.35,0.75), r:rnd(2,4), col
-      });
-    }
-  }
-
-  function dash(){
-    const g=game;
-    if(g.dashCd>0) return;
-    g.dashCd=0.9;
-    const mv = getMoveVec();
-    const len = Math.hypot(mv.x,mv.y) || 1;
-    const dx = mv.x/len, dy=mv.y/len;
-    g.player.vx += dx*520;
-    g.player.vy += dy*520;
-    beep(980,0.05,'square',0.05);
-    particle(g.player.x,g.player.y,'rgba(255,211,106,.95)',10);
-  }
-
-  function hit(){
-    const g=game;
-    if(g.player.inv>0) return;
-    g.hp--;
-    g.combo=1;
-    g.player.inv=0.9;
-    g.shake=0.25;
-    beep(220,0.09,'square',0.06);
-    particle(g.player.x,g.player.y,'rgba(255,90,120,.95)',16);
-    if(g.hp<=0){
-      g.running=false;
-      showStart("Game Over 😅", "Dale restart y la rompes, Tati 💜", "Reintentar");
-    }
-  }
-
-  function winLevel(){
-    const g=game;
-    beep(880,0.08,'square',0.05);
-    particle(g.player.x,g.player.y,'rgba(82,255,168,.95)',24);
-    g.level++;
-    if(g.level>3){
-      g.running=false;
-      prOv.style.display='flex';
-      burstConfetti();
-      return;
-    }
-    spawnLevel();
-  }
-
-  function showStart(title, text, btnText){
-    startOv.style.display='flex';
-    document.querySelector('#start h1').textContent = title;
-    document.querySelector('#start p').innerHTML = text;
-    playBtn.textContent = btnText;
-  }
-
-  function getMoveVec(){
-    let x=0,y=0;
-    if(keys.left) x-=1;
-    if(keys.right) x+=1;
-    if(keys.up) y-=1;
-    if(keys.down) y+=1;
-
-    // add joystick
-    x += joyVec.x;
-    y += joyVec.y;
-
-    // deadzone (prevents drift)
-    const dz = 0.18;
-    if(Math.hypot(x,y) < dz) return {x:0,y:0};
-
-    return {x,y};
-  }
-
-  // --- Loop
-  let last=performance.now();
-  function loop(now){
-    const dt = Math.min(0.033, (now-last)/1000);
-    last=now;
-    if(game && game.running && !paused){
-      step(dt);
-    }
-    render();
-    requestAnimationFrame(loop);
-  }
-  requestAnimationFrame(loop);
-
-  function step(dt){
-    const g=game;
-    g.time -= dt;
-    if(g.time<=0){
-      g.running=false;
-      showStart("Tiempo 😵‍💫", "Se acabó el tiempo. Dale otra, que tú puedes 💜", "Reintentar");
-      return;
-    }
-
-    if(g.dashCd>0) g.dashCd -= dt;
-    if(g.player.inv>0) g.player.inv -= dt;
-    if(g.shake>0) g.shake -= dt;
-
-    if(keys.a){ keys.a=false; dash(); }
-
-    const mv=getMoveVec();
-    const len=Math.hypot(mv.x,mv.y);
-    const nx=len>0?mv.x/len:0;
-    const ny=len>0?mv.y/len:0;
-
-    const p=g.player;
-    p.vx += nx*p.spd*dt*5;
-    p.vy += ny*p.spd*dt*5;
-    p.vx *= (1 - 3.2*dt);
-    p.vy *= (1 - 3.2*dt);
-    p.x += p.vx*dt;
-    p.y += p.vy*dt;
-    p.x = clamp(p.x, 24, window.innerWidth-24);
-    p.y = clamp(p.y, 80, window.innerHeight-24);
-
-    for(const e of g.enemies){
-      e.x += e.vx*dt;
-      e.y += e.vy*dt;
-      e.x += Math.sin(performance.now()*0.002*e.wob)*20*dt;
-      e.y += Math.cos(performance.now()*0.002*e.wob)*16*dt;
-      if(e.x<240||e.x>window.innerWidth-18) e.vx*=-1;
-      if(e.y<90||e.y>window.innerHeight-18) e.vy*=-1;
-      if(dist2(p.x,p.y,e.x,e.y) < (p.r+e.r)*(p.r+e.r)) hit();
-    }
-
-    const need = g.need[g.level-1];
-    for(const s of g.stars){
-      if(!s.alive) continue;
-
-      // magnet radius (mobile-friendly)
-      const magnet = 18;
-      if(dist2(p.x,p.y,s.x,s.y) < (p.r+s.r+magnet)*(p.r+s.r+magnet)){
-        s.alive=false;
-        g.got++;
-        g.score += 100*g.combo;
-        g.combo = Math.min(9, g.combo+1);
-        beep(740,0.05,'square',0.04);
-        particle(s.x,s.y,'rgba(255,211,106,.95)',14);
-        if(g.got >= need){
-          winLevel();
-          return;
+      cam:{x:0,y:0},
+      player:{x:3*TILE, y:3*TILE, spd:160, face:'down'},
+      inventory:[],
+      questReadyToWin:false,
+      dialogQueue:[],
+      canInteract:true,
+      aLatch:false,
+      npcs:[
+        {
+          id:'tati',
+          name:'Tati',
+          x:24*TILE, y:4*TILE,
+          lines:[
+            "Lucas… te tengo una quest. 👀",
+            "Tráeme 3 reliquias: 💜, ⭐ y 🍓.",
+            "Cuando vuelvas… te tengo una sorpresa 😉"
+          ]
+        },
+        {
+          id:'sign1',
+          name:'Letrero',
+          x:5*TILE, y:14*TILE,
+          lines:[
+            "Tip: Acércate a lo que brille y pulsa A.",
+            "Si te pierdes, busca el camino con menos paredes."
+          ]
         }
-      }
-    }
+      ],
+      items:[
+        {id:'heart', icon:'💜', name:'Reliquia Morada', x:6*TILE, y:5*TILE, taken:false},
+        {id:'star',  icon:'⭐', name:'Estrella', x:20*TILE, y:13*TILE, taken:false},
+        {id:'berry', icon:'🍓', name:'Berry', x:25*TILE, y:15*TILE, taken:false},
+      ],
+    };
 
-    g.particles = g.particles.filter(pt => (pt.life -= dt) > 0);
-    for(const pt of g.particles){
-      pt.x += pt.vx*dt;
-      pt.y += pt.vy*dt;
-      pt.vy += 600*dt;
-      pt.vx *= (1 - 1.8*dt);
-    }
-
-    updateUI();
+    updateHUD();
   }
 
-  function render(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    if(!game) return;
-
-    const g=game;
-
-    let sx=0, sy=0;
-    const rnd = (a,b)=>a+Math.random()*(b-a);
-    if(g.shake>0){
-      sx = rnd(-6,6) * (g.shake/0.25);
-      sy = rnd(-6,6) * (g.shake/0.25);
-    }
-
-    ctx.save();
-    ctx.translate(sx, sy);
-
-    ctx.globalAlpha = 0.6;
-    for(let i=0;i<110;i++){
-      const x=(i*173)%window.innerWidth;
-      const y=(i*97)%window.innerHeight;
-      ctx.fillStyle = (i%9===0) ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.5)';
-      ctx.fillRect(x,y,2,2);
-    }
-    ctx.globalAlpha = 1;
-
-    ctx.globalAlpha = 0.28;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(220, 0, 2, window.innerHeight);
-    ctx.globalAlpha = 1;
-
-    for(const s of g.stars){
-      if(!s.alive) continue;
-      drawOrb(s.x,s.y,s.r);
-    }
-
-    for(const e of g.enemies){
-      drawGlitch(e.x,e.y,e.r);
-    }
-
-    drawHeart(g.player.x,g.player.y,g.player.r, g.player.inv>0);
-
-    for(const pt of g.particles){
-      ctx.fillStyle = pt.col;
-      ctx.fillRect(pt.x,pt.y,pt.r,pt.r);
-    }
-
-    if(paused && g.running){
-      ctx.globalAlpha=0.75;
-      ctx.fillStyle='rgba(0,0,0,.45)';
-      ctx.fillRect(0,0,window.innerWidth, window.innerHeight);
-      ctx.globalAlpha=1;
-      ctx.fillStyle='#fff';
-      ctx.font='900 40px system-ui';
-      ctx.textAlign='center';
-      ctx.fillText('PAUSA ⏸', window.innerWidth/2, window.innerHeight/2);
-      ctx.font='800 16px system-ui';
-      ctx.fillStyle='rgba(255,255,255,.75)';
-      ctx.fillText('Presiona ⏸ / Pause pa’ seguir', window.innerWidth/2, window.innerHeight/2 + 36);
-    }
-
-    ctx.restore();
-    drawConfetti();
+  function updateHUD(){
+    const got = game.inventory.length;
+    ui.quest.textContent = `Quest: ${got}/3 reliquias`;
+    ui.inv.textContent = `Inv: ${game.inventory.length? game.inventory.map(i=>i.icon).join(' ') : '—'}`;
   }
 
-  function drawHeart(x,y,r,blink){
-    const visible = blink ? (Math.floor(performance.now()/100)%2===0) : true;
-    if(!visible) return;
-    ctx.save();
-    ctx.translate(x,y);
-    ctx.fillStyle='rgba(255,92,200,.95)';
-    ctx.beginPath();
-    ctx.moveTo(0, r*0.75);
-    ctx.bezierCurveTo(-r*1.2, -r*0.2, -r*0.4, -r*1.4, 0, -r*0.7);
-    ctx.bezierCurveTo(r*0.4, -r*1.4, r*1.2, -r*0.2, 0, r*0.75);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,.75)';
-    ctx.lineWidth=2;
-    ctx.stroke();
-    ctx.restore();
+  // ===== Dialogue =====
+  function openDialog(name, lines){
+    game.dialogQueue = lines.slice();
+    dName.textContent = name;
+    dHint.textContent = "Pulsa A pa’ continuar";
+    dialog.style.display='block';
+    nextDialogLine();
+  }
+  function nextDialogLine(){
+    const line = game.dialogQueue.shift();
+    if(!line){
+      dialog.style.display='none';
+      game.canInteract = true;
+      return;
+    }
+    dText.textContent = line;
+    beep(660,0.03,'square',0.03);
   }
 
-  function drawGlitch(x,y,r){
-    ctx.save();
-    ctx.translate(x,y);
-    ctx.fillStyle='rgba(184,107,255,.22)';
-    ctx.strokeStyle='rgba(255,255,255,.35)';
-    ctx.lineWidth=2;
-    roundRect(-r,-r,r*2,r*2,8,true,true);
-    ctx.strokeStyle='rgba(255,92,200,.60)';
-    ctx.beginPath();
-    ctx.moveTo(-r+2,-r+6); ctx.lineTo(r-2,-r+6);
-    ctx.moveTo(-r+2,0); ctx.lineTo(r-10,0);
-    ctx.moveTo(-r+2,r-6); ctx.lineTo(r-6,r-6);
-    ctx.stroke();
-    ctx.restore();
+  // ===== Particles =====
+  const parts=[];
+  function particleBurst(x,y){
+    for(let i=0;i<16;i++){
+      parts.push({
+        x,y, vx:rnd(-140,140), vy:rnd(-190,90),
+        life:rnd(0.35,0.7), r:rnd(2,4),
+        c: ['rgba(184,107,255,.95)','rgba(255,92,200,.95)','rgba(255,211,106,.95)','rgba(82,255,168,.95)'][Math.floor(rnd(0,4))]
+      });
+    }
   }
 
-  function drawOrb(x,y,r){
-    ctx.save();
-    ctx.translate(x,y);
-    ctx.fillStyle='rgba(255,211,106,.22)';
-    ctx.strokeStyle='rgba(255,211,106,.65)';
-    ctx.lineWidth=2;
-    ctx.beginPath();
-    ctx.arc(0,0,r,0,Math.PI*2);
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle='rgba(255,231,184,.95)';
-    ctx.font='900 14px system-ui';
-    ctx.textAlign='center';
-    ctx.textBaseline='middle';
-    ctx.fillText('★',0,1);
-    ctx.restore();
-  }
-
-  function roundRect(x, y, w, h, r, fill, stroke){
-    const rr = Math.min(r, w/2, h/2);
-    ctx.beginPath();
-    ctx.moveTo(x+rr,y);
-    ctx.arcTo(x+w,y, x+w,y+h, rr);
-    ctx.arcTo(x+w,y+h, x,y+h, rr);
-    ctx.arcTo(x,y+h, x,y, rr);
-    ctx.arcTo(x,y, x+w,y, rr);
-    ctx.closePath();
-    if(fill) ctx.fill();
-    if(stroke) ctx.stroke();
-  }
-
-  // Start overlay buttons
-  howBtn.addEventListener('click', ()=>{ howTxt.style.display = (howTxt.style.display==='none'?'block':'none'); });
-  playBtn.addEventListener('click', ()=>{ startGame(); });
-
-  // PR overlay actions
-  replayBtn.addEventListener('click', ()=>{
-    startOv.style.display='flex';
-    prOv.style.display='none';
-    playBtn.textContent='Press Start';
-  });
-  mergeBtn.addEventListener('click', ()=>{
-    mergeRes.style.display='block';
-    burstConfetti();
-    beep(900,0.08);
-  });
-  yesBtn.addEventListener('click', ()=>{
-    beep(880,0.10);
-    alert("💜 Yesss. Girlfriend_mode = true ✅");
-  });
-  thinkBtn.addEventListener('click', ()=>{
-    thinkTxt.style.display='block';
-    beep(520,0.06);
-  });
-
-  // Confetti
+  // ===== Confetti =====
   let confetti = [];
   function piece(){
     const colors = ['#b86bff','#ff5cc8','#ffffff','#52ffa8','#ffd36a'];
@@ -808,10 +666,352 @@
     confetti = confetti.filter(p=>p.life>0 && p.y < window.innerHeight+40);
   }
 
-  // initial state
+  // ===== WIN SCREEN =====
+  function showWin(){
+    paused = true;
+    winModal.style.display = 'none';
+    winOverlay.style.display = 'flex';
+    burstConfetti();
+    beep(880,0.08);
+  }
+  function hideWin(){
+    winOverlay.style.display = 'none';
+    winModal.style.display = 'none';
+  }
+
+  trophyBtn.addEventListener('click', ()=>{
+    winModal.style.display = (winModal.style.display === 'block') ? 'none' : 'block';
+    beep(740,0.06);
+  });
+
+  function yesAction(){
+    burstConfetti();
+    beep(980,0.10);
+    alert("💜 Girlfriend_mode = true ✅");
+  }
+  winYes1.addEventListener('click', yesAction);
+  winYes2.addEventListener('click', yesAction);
+  winClose.addEventListener('click', hideWin);
+
+  // ===== Interaction =====
+  function tryInteract(){
+    if(!game.canInteract) return;
+
+    const p = game.player;
+
+    // if dialog open, A advances
+    if(dialog.style.display==='block'){
+      nextDialogLine();
+      return;
+    }
+
+    // nearest NPC
+    const npc = game.npcs.find(n => dist(p.x,p.y,n.x,n.y) < 24);
+    if(npc){
+      game.canInteract = false;
+
+      // If it's Tati and all items are collected → WIN
+      if(npc.id==='tati' && game.inventory.length===3){
+        openDialog("Tati", [
+          "Ok… veo que completaste la quest. ✅",
+          "Ahora sí… reclama tu trofeo 🏆"
+        ]);
+        game.questReadyToWin = true;
+        return;
+      }
+
+      openDialog(npc.name, npc.lines);
+      return;
+    }
+
+    // nearest item
+    const it = game.items.find(i => !i.taken && dist(p.x,p.y,i.x,i.y) < 22);
+    if(it){
+      it.taken = true;
+      game.inventory.push(it);
+      updateHUD();
+      particleBurst(it.x, it.y);
+      beep(740,0.06,'square',0.05);
+
+      game.canInteract = false;
+      openDialog("Sistema", [
+        `Obtuviste: ${it.icon} ${it.name}`,
+        (game.inventory.length<3)
+          ? "Sigue buscando… te faltan reliquias."
+          : "¡Listo! Vuelve donde Tati pa’ ganar."
+      ]);
+      return;
+    }
+  }
+
+  // ===== Movement + Collision =====
+  function getMoveVec(){
+    let x=0,y=0;
+    if(keys.left) x-=1;
+    if(keys.right) x+=1;
+    if(keys.up) y-=1;
+    if(keys.down) y+=1;
+    x += joyVec.x;
+    y += joyVec.y;
+
+    const dz = 0.18;
+    if(Math.hypot(x,y) < dz) return {x:0,y:0};
+    const len = Math.hypot(x,y);
+    return {x:x/len, y:y/len};
+  }
+
+  function movePlayer(dt){
+    const p = game.player;
+    const mv = getMoveVec();
+    const spd = p.spd;
+
+    if(mv.x===0 && mv.y===0) return;
+
+    if(Math.abs(mv.x) > Math.abs(mv.y)) p.face = (mv.x>0?'right':'left');
+    else p.face = (mv.y>0?'down':'up');
+
+    let nx = p.x + mv.x*spd*dt;
+    let ny = p.y + mv.y*spd*dt;
+
+    const r = 9;
+    function collides(px,py){
+      const corners = [
+        {x:px-r,y:py-r},{x:px+r,y:py-r},{x:px-r,y:py+r},{x:px+r,y:py+r}
+      ];
+      return corners.some(c=>{
+        const tx = Math.floor(c.x / TILE);
+        const ty = Math.floor(c.y / TILE);
+        return isWall(tx,ty);
+      });
+    }
+
+    if(!collides(nx, p.y)) p.x = nx;
+    if(!collides(p.x, ny)) p.y = ny;
+
+    p.x = clamp(p.x, TILE*1.2, TILE*(MAP_W-1.2));
+    p.y = clamp(p.y, TILE*1.2, TILE*(MAP_H-1.2));
+  }
+
+  // ===== Camera =====
+  function updateCamera(){
+    const p = game.player;
+    const targetX = p.x - window.innerWidth/2;
+    const targetY = p.y - window.innerHeight/2;
+    const maxX = MAP_W*TILE - window.innerWidth;
+    const maxY = MAP_H*TILE - window.innerHeight;
+    game.cam.x = clamp(targetX, 0, Math.max(0,maxX));
+    game.cam.y = clamp(targetY, 0, Math.max(0,maxY));
+  }
+
+  // ===== Render helpers =====
+  function roundRect(x, y, w, h, r, fill, stroke){
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr,y);
+    ctx.arcTo(x+w,y, x+w,y+h, rr);
+    ctx.arcTo(x+w,y+h, x,y+h, rr);
+    ctx.arcTo(x,y+h, x,y, rr);
+    ctx.arcTo(x,y, x+w,y, rr);
+    ctx.closePath();
+    if(fill) ctx.fill();
+    if(stroke) ctx.stroke();
+  }
+
+  function drawMap(){
+    const cam = game.cam;
+    const startX = Math.floor(cam.x / TILE);
+    const startY = Math.floor(cam.y / TILE);
+    const endX = Math.ceil((cam.x + window.innerWidth) / TILE);
+    const endY = Math.ceil((cam.y + window.innerHeight) / TILE);
+
+    for(let y=startY; y<endY; y++){
+      for(let x=startX; x<endX; x++){
+        if(x<0||y<0||x>=MAP_W||y>=MAP_H) continue;
+        const t = map[y][x];
+        const sx = x*TILE - cam.x;
+        const sy = y*TILE - cam.y;
+
+        if(t===1){
+          ctx.fillStyle = 'rgba(255,255,255,.10)';
+          ctx.fillRect(sx,sy,TILE,TILE);
+          ctx.strokeStyle = 'rgba(255,255,255,.14)';
+          ctx.strokeRect(sx+0.5,sy+0.5,TILE-1,TILE-1);
+        }else if(t===2){
+          ctx.fillStyle = 'rgba(184,107,255,.06)';
+          ctx.fillRect(sx,sy,TILE,TILE);
+        }else{
+          ctx.fillStyle = 'rgba(0,0,0,.08)';
+          ctx.fillRect(sx,sy,TILE,TILE);
+        }
+      }
+    }
+  }
+
+  function drawItems(){
+    const cam=game.cam;
+    for(const it of game.items){
+      if(it.taken) continue;
+      const sx = it.x - cam.x;
+      const sy = it.y - cam.y;
+
+      ctx.globalAlpha = 0.45 + 0.25*Math.sin(performance.now()*0.006);
+      ctx.fillStyle = 'rgba(255,211,106,.25)';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 18, 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      ctx.font = '20px system-ui';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(it.icon, sx, sy);
+    }
+  }
+
+  function drawEntity(x,y,isTati){
+    const cam=game.cam;
+    const sx = x - cam.x;
+    const sy = y - cam.y;
+
+    ctx.fillStyle = isTati ? 'rgba(184,107,255,.35)' : 'rgba(255,255,255,.10)';
+    roundRect(sx-12, sy-14, 24, 28, 8, true, false);
+
+    ctx.font = '18px system-ui';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(255,255,255,.95)';
+    ctx.fillText(isTati?'💜':'ℹ️', sx, sy+1);
+  }
+
+  function drawNPCs(){
+    for(const n of game.npcs){
+      const isTati = n.id==='tati';
+      drawEntity(n.x, n.y, isTati);
+
+      const p=game.player;
+      if(dist(p.x,p.y,n.x,n.y) < 52){
+        const cam=game.cam;
+        const sx = n.x - cam.x;
+        const sy = n.y - cam.y;
+        ctx.font='12px system-ui';
+        ctx.textAlign='center';
+        ctx.fillStyle='rgba(255,255,255,.85)';
+        ctx.fillText(n.name, sx, sy-24);
+      }
+    }
+  }
+
+  function drawPlayer(){
+    const p=game.player;
+    const cam=game.cam;
+    const sx = p.x - cam.x;
+    const sy = p.y - cam.y;
+
+    ctx.fillStyle='rgba(0,0,0,.25)';
+    ctx.beginPath();
+    ctx.ellipse(sx, sy+12, 12, 6, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle='rgba(255,92,200,.90)';
+    roundRect(sx-12, sy-16, 24, 32, 9, true, false);
+
+    ctx.fillStyle='rgba(255,255,255,.85)';
+    const fx = p.face==='right'? 6 : p.face==='left'? -6 : 0;
+    const fy = p.face==='down'? 6 : p.face==='up'? -6 : 0;
+    ctx.beginPath();
+    ctx.arc(sx+fx, sy-2+fy, 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  function drawParticles(dt){
+    for(let i=parts.length-1;i>=0;i--){
+      const p=parts[i];
+      p.life -= dt;
+      p.x += p.vx*dt;
+      p.y += p.vy*dt;
+      p.vy += 540*dt;
+      p.vx *= (1 - 1.6*dt);
+
+      const cam=game.cam;
+      ctx.fillStyle=p.c;
+      ctx.fillRect(p.x-cam.x, p.y-cam.y, p.r, p.r);
+
+      if(p.life<=0) parts.splice(i,1);
+    }
+  }
+
+  // ===== Loop =====
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(0.033, (now-last)/1000);
+    last = now;
+
+    if(game && game.running && !paused){
+      if(keys.a && !game.aLatch){
+        game.aLatch = true;
+        tryInteract();
+      }
+      if(!keys.a) game.aLatch = false;
+
+      movePlayer(dt);
+      updateCamera();
+
+      // If quest ready and dialog just closed → show YOU WIN
+      if(game.questReadyToWin && dialog.style.display==='none'){
+        game.questReadyToWin = false;
+        showWin();
+      }
+    }
+
+    render(dt);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  function render(dt){
+    ctx.clearRect(0,0,window.innerWidth,window.innerHeight);
+
+    ctx.globalAlpha = 0.55;
+    for(let i=0;i<90;i++){
+      const x=(i*173)%window.innerWidth;
+      const y=(i*97)%window.innerHeight;
+      ctx.fillStyle = (i%9===0) ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.5)';
+      ctx.fillRect(x,y,2,2);
+    }
+    ctx.globalAlpha = 1;
+
+    if(!game) { drawConfetti(); return; }
+
+    drawMap();
+    drawItems();
+    drawNPCs();
+    drawPlayer();
+    drawParticles(dt);
+
+    if(paused){
+      ctx.globalAlpha=0.70;
+      ctx.fillStyle='rgba(0,0,0,.45)';
+      ctx.fillRect(0,0,window.innerWidth, window.innerHeight);
+      ctx.globalAlpha=1;
+      ctx.fillStyle='#fff';
+      ctx.font='900 36px system-ui';
+      ctx.textAlign='center';
+      ctx.fillText('PAUSA ⏸', window.innerWidth/2, window.innerHeight/2);
+      ctx.font='800 14px system-ui';
+      ctx.fillStyle='rgba(255,255,255,.75)';
+      ctx.fillText('Dale ⏸ / Pause pa’ seguir', window.innerWidth/2, window.innerHeight/2 + 28);
+    }
+
+    drawConfetti();
+  }
+
+  // ===== UI wiring =====
+  howBtn.addEventListener('click', ()=>{ howTxt.style.display = (howTxt.style.display==='none'?'block':'none'); });
+  playBtn.addEventListener('click', ()=> startGame());
+
+  // Init
   ui.sound.textContent = 'Sound: OFF';
 })();
 </script>
 </body>
 </html>
-
