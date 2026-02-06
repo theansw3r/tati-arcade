@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Tati Arcade — Pokémon Mode</title>
+  <title>Tati Arcade — Pocket Quest</title>
   <style>
     :root{
       --bg1:#12062a; --bg2:#2c0750;
@@ -19,42 +19,42 @@
       margin:0; min-height:100vh; color:var(--tx);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
       background:
-        radial-gradient(1000px 600px at 20% 10%, rgba(184,107,255,.25), transparent 60%),
-        radial-gradient(900px 700px at 80% 20%, rgba(255,92,200,.20), transparent 55%),
-        radial-gradient(900px 700px at 40% 90%, rgba(82,255,168,.12), transparent 55%),
+        radial-gradient(1000px 600px at 20% 10%, rgba(184,107,255,.18), transparent 60%),
+        radial-gradient(900px 700px at 80% 20%, rgba(255,92,200,.14), transparent 55%),
+        radial-gradient(900px 700px at 40% 90%, rgba(82,255,168,.10), transparent 55%),
         linear-gradient(180deg, var(--bg1), var(--bg2));
       overflow:hidden;
     }
 
     canvas{ width:100vw; height:100vh; display:block; image-rendering: pixelated; }
 
-    /* HUD */
-    .ui{
-      position:fixed; left:14px; right:14px; top:14px;
+    /* HUD (top, minimal like emulator overlay) */
+    .hud{
+      position:fixed; left:10px; right:10px; top:10px;
       display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
       z-index:10; pointer-events:none;
     }
-    .bar{
+    .chip{
       pointer-events:auto;
-      padding:10px 12px;
-      border-radius:var(--radius);
-      background:linear-gradient(180deg, var(--glass1), var(--glass2));
-      border:1px solid var(--bd);
-      box-shadow:var(--shadow);
+      padding:8px 10px;
+      border-radius:14px;
+      background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.10));
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:0 16px 50px rgba(0,0,0,.35);
       backdrop-filter: blur(10px);
       display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      font-size:12px; color:rgba(255,255,255,.92);
     }
     .pill{
       display:inline-flex; align-items:center; gap:8px;
-      padding:8px 10px; border-radius:999px;
-      border:1px solid var(--bd);
+      padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
       background:rgba(0,0,0,.14);
-      font-size:12px; color:var(--tx);
       white-space:nowrap;
+      font-weight:900;
     }
-    .pill.ok{border-color:rgba(82,255,168,.28); background:rgba(82,255,168,.10); color:#dcffe9}
-    .pill.warn{border-color:rgba(255,211,106,.28); background:rgba(255,211,106,.10); color:#ffe7b8}
-
+    .pill.ok{border-color:rgba(82,255,168,.28); background:rgba(82,255,168,.10)}
+    .pill.warn{border-color:rgba(255,211,106,.28); background:rgba(255,211,106,.10)}
     .btn{
       pointer-events:auto;
       border:none; border-radius:14px;
@@ -64,88 +64,135 @@
     }
     .btn.ghost{
       background:rgba(255,255,255,.10);
-      border:1px solid var(--bd);
-      color:var(--tx);
+      border:1px solid rgba(255,255,255,.18);
+      color:#fff;
     }
 
-    /* Touch controls */
+    /* Touch controls like emulator overlay */
     .touch{
-      position:fixed; left:14px; right:14px; bottom:14px;
-      display:flex; justify-content:space-between; gap:14px;
-      z-index:20; pointer-events:none;
+      position:fixed; inset:0;
+      z-index:20;
+      pointer-events:none;
     }
-    .joy, .act{pointer-events:auto}
-    .joy{
-      width:170px; height:170px; border-radius:999px;
-      border:1px solid var(--bd);
-      background:rgba(0,0,0,.16);
+    .dpad{
+      position:absolute; left:16px; bottom:20px;
+      width:170px; height:170px;
+      border-radius:22px;
+      background:rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.18);
       backdrop-filter: blur(10px);
-      position:relative; touch-action:none;
-    }
-    .knob{
-      width:70px; height:70px; border-radius:999px;
-      background:linear-gradient(180deg, rgba(255,92,200,.85), rgba(184,107,255,.85));
-      position:absolute; left:50%; top:50%;
-      transform:translate(-50%,-50%);
-      border:1px solid rgba(255,255,255,.22);
-      box-shadow:0 12px 26px rgba(0,0,0,.35);
-    }
-    .act{display:flex; flex-direction:column; gap:10px; align-items:flex-end;}
-    .aBtn{
-      width:98px; height:98px; border-radius:24px;
-      border:none; cursor:pointer;
-      background:linear-gradient(180deg, rgba(82,255,168,.95), rgba(82,255,168,.70));
-      color:#062014; font-weight:1000; font-size:18px;
-      box-shadow:0 18px 40px rgba(82,255,168,.18);
+      box-shadow:0 18px 60px rgba(0,0,0,.35);
+      pointer-events:auto;
       touch-action:none;
     }
-    .pBtn{
-      width:98px; height:44px; border-radius:16px;
-      border:1px solid var(--bd);
+    .dpad .cross{
+      position:absolute; inset:22px;
+      border-radius:16px;
       background:rgba(255,255,255,.10);
-      color:var(--tx); font-weight:900; cursor:pointer;
+      border:1px solid rgba(255,255,255,.18);
+    }
+    .dpad .nub{
+      position:absolute; left:50%; top:50%;
+      width:66px; height:66px;
+      transform:translate(-50%,-50%);
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(184,107,255,.95), rgba(255,92,200,.75));
+      border:1px solid rgba(255,255,255,.20);
+      box-shadow:0 10px 28px rgba(0,0,0,.35);
+    }
+
+    .ab{
+      position:absolute; right:16px; bottom:36px;
+      display:flex; gap:12px; align-items:flex-end;
+      pointer-events:auto;
+    }
+    .ab button{
+      border:none; cursor:pointer;
+      border-radius:999px;
+      width:84px; height:84px;
+      font-weight:1000; font-size:16px;
+      box-shadow:0 18px 50px rgba(0,0,0,.35);
       touch-action:none;
     }
-    @media (min-width: 900px){ .touch{display:none} }
+    .ab .a{ background:linear-gradient(180deg, rgba(82,255,168,.95), rgba(82,255,168,.70)); color:#062014; }
+    .ab .b{ background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.18); color:#fff; width:70px; height:70px; margin-bottom:8px; }
 
-    /* Overlays */
-    .overlay{
-      position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-      padding:18px; z-index:30;
-      background:rgba(0,0,0,.55);
-      backdrop-filter: blur(6px);
+    .menuRow{
+      position:absolute; left:50%; bottom:18px;
+      transform:translateX(-50%);
+      display:flex; gap:10px;
+      pointer-events:auto;
     }
-    .card{
-      width:min(780px,100%);
-      border-radius:20px;
-      border:1px solid var(--bd);
-      background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.10));
-      box-shadow:0 18px 60px rgba(0,0,0,.55);
-      padding:16px;
+    .menuRow button{
+      width:84px; height:38px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(0,0,0,.16);
+      color:#fff;
+      font-weight:900;
+      cursor:pointer;
     }
-    .card h1{margin:0; font-size:22px}
-    .card p{margin:10px 0 0; color:var(--mt); line-height:1.5}
-    .row{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
-    .sub{color:var(--mt)}
 
-    /* Dialogue box (Pokémon vibe) */
+    @media (min-width: 900px){
+      .touch{display:none}
+    }
+
+    /* Dialog box like Pokémon */
     .dialog{
       position:fixed; left:14px; right:14px; bottom:14px;
-      z-index:25;
-      border-radius:20px;
-      border:1px solid var(--bd);
-      background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.10));
+      z-index:30;
+      border-radius:18px;
+      border:2px solid rgba(255,255,255,.30);
+      background:linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.25));
       box-shadow:0 18px 60px rgba(0,0,0,.55);
       padding:14px;
       display:none;
     }
     .dialog .name{font-weight:1000; margin-bottom:6px}
-    .dialog .text{color:rgba(255,255,255,.88); line-height:1.4}
+    .dialog .text{color:rgba(255,255,255,.92); line-height:1.4}
     .dialog .hint{margin-top:10px; color:rgba(255,255,255,.68); font-size:12px}
 
-    #confetti{position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:40}
+    /* Prompt input modal (for codes) */
+    .prompt{
+      position:fixed; inset:0;
+      z-index:50;
+      display:none;
+      align-items:center; justify-content:center;
+      padding:18px;
+      background:rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+    }
+    .promptCard{
+      width:min(520px,100%);
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,.18);
+      background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.10));
+      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      padding:16px;
+    }
+    .promptCard h2{margin:0; font-size:18px}
+    .promptCard p{margin:10px 0 0; color:rgba(255,255,255,.78); line-height:1.45}
+    .promptRow{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap}
+    .promptCard input{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(0,0,0,.22);
+      color:#fff;
+      font-weight:900;
+      letter-spacing:.6px;
+      outline:none;
+      text-transform: uppercase;
+    }
+    .msg{ margin-top:10px; font-weight:900; color:rgba(255,255,255,.92); }
+    .msg.ok{ color: #dcffe9; }
+    .msg.bad{ color: #ffd7df; }
 
-    /* ===== WIN SCREEN (pixel vibe) ===== */
+    /* Confetti canvas */
+    #confetti{position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:60}
+
+    /* ===== WIN SCREEN like your sample ===== */
     .pixel{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
       letter-spacing: .5px;
@@ -154,7 +201,7 @@
     .winOverlay{
       position:fixed; inset:0;
       display:none;
-      z-index:60;
+      z-index:80;
       background: rgba(0,0,0,.60);
       backdrop-filter: blur(6px);
       padding: 18px;
@@ -298,13 +345,13 @@
   </style>
 </head>
 <body>
-  <div class="ui">
-    <div class="bar">
-      <span class="pill" id="mode">Modo: Pokémon</span>
-      <span class="pill warn" id="quest">Quest: 0/3 reliquias</span>
-      <span class="pill" id="inv">Inv: —</span>
+  <div class="hud">
+    <div class="chip">
+      <span class="pill">Pocket Quest</span>
+      <span class="pill warn" id="progress">Puertas: 0/3</span>
+      <span class="pill" id="inv">Keys: —</span>
     </div>
-    <div class="bar">
+    <div class="chip">
       <button class="btn ghost" id="sound">Sound: OFF</button>
       <button class="btn ghost" id="pause">Pause</button>
       <button class="btn" id="restart">Restart</button>
@@ -314,60 +361,62 @@
   <canvas id="c"></canvas>
   <canvas id="confetti"></canvas>
 
+  <div class="touch" aria-hidden="true">
+    <div class="dpad" id="dpad">
+      <div class="cross"></div>
+      <div class="nub" id="nub"></div>
+    </div>
+
+    <div class="ab">
+      <button class="b" id="bBtn">B</button>
+      <button class="a" id="aBtn">A</button>
+    </div>
+
+    <div class="menuRow">
+      <button id="selBtn">SELECT</button>
+      <button id="staBtn">START</button>
+    </div>
+  </div>
+
   <div class="dialog" id="dialog">
     <div class="name" id="dName">NPC</div>
     <div class="text" id="dText">Texto…</div>
     <div class="hint" id="dHint">Pulsa A pa’ continuar</div>
   </div>
 
-  <div class="touch" aria-hidden="true">
-    <div class="joy" id="joy"><div class="knob" id="knob"></div></div>
-    <div class="act">
-      <button class="aBtn" id="aBtn">A</button>
-      <button class="pBtn" id="pBtn">⏸</button>
-    </div>
-  </div>
-
-  <!-- START OVERLAY -->
-  <div class="overlay" id="start">
-    <div class="card">
-      <h1>💜 Tati Arcade — Pokémon Mode</h1>
-      <p>
-        Cel: Joystick + botón <b>A</b><br>
-        Objetivo: consigue <b>3 reliquias</b> y vuelve donde <b>Tati</b> pa’ ganar 🏆
-      </p>
-      <div class="row">
-        <button class="btn" id="play">Start</button>
-        <button class="btn ghost" id="how">Cómo jugar</button>
+  <!-- Code prompt modal -->
+  <div class="prompt" id="prompt">
+    <div class="promptCard">
+      <h2 id="pTitle">Checkpoint</h2>
+      <p id="pBody">Escribe la clave del papel.</p>
+      <div class="promptRow">
+        <input id="pInput" autocomplete="off" autocapitalize="characters" placeholder="ESCRIBE AQUÍ…" />
       </div>
-      <p class="sub" id="howTxt" style="display:none;margin-top:10px">
-        Camina por el mapa. Acércate a un objeto (brilla) y pulsa A. Habla con NPCs igual.
-      </p>
+      <div class="promptRow">
+        <button class="btn" id="pOk">Validar</button>
+        <button class="btn ghost" id="pCancel">Cancelar</button>
+      </div>
+      <div class="msg" id="pMsg" style="display:none;"></div>
     </div>
   </div>
 
-  <!-- ===== WIN OVERLAY (YOU WIN) ===== -->
+  <!-- YOU WIN overlay -->
   <div class="winOverlay" id="winOverlay">
     <div class="winCard">
       <div class="winSky">
         <div class="cloud c1"></div>
         <div class="cloud c2"></div>
         <div class="cloud c3"></div>
-
         <button class="trophyBtn" id="trophyBtn" aria-label="Trophy">
           <div class="trophyIcon">🏆</div>
         </button>
-
         <div class="winText pixel">YOU WIN!</div>
       </div>
-
       <div class="winGround">
         <p class="winHint pixel">TAP THE TROPHY</p>
-
         <div class="winModal" id="winModal">
           <p class="winQ">Tati… ¿quieres ser mi novia?</p>
           <p class="winSub">“Acepto tus bugs y celebro tus versiones.”</p>
-
           <div class="winBtns">
             <button class="winYes" id="winYes1">Sí</button>
             <button class="winYes" id="winYes2">Sí</button>
@@ -380,42 +429,16 @@
 
 <script>
 (() => {
-  const c = document.getElementById('c');
-  const ctx = c.getContext('2d');
+  // ===== Canvas setup =====
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
   const conf = document.getElementById('confetti');
   const cctx = conf.getContext('2d');
 
-  const ui = {
-    mode: document.getElementById('mode'),
-    quest: document.getElementById('quest'),
-    inv: document.getElementById('inv'),
-    sound: document.getElementById('sound'),
-    pause: document.getElementById('pause'),
-    restart: document.getElementById('restart'),
-  };
-
-  const startOv = document.getElementById('start');
-  const playBtn = document.getElementById('play');
-  const howBtn = document.getElementById('how');
-  const howTxt = document.getElementById('howTxt');
-
-  const dialog = document.getElementById('dialog');
-  const dName = document.getElementById('dName');
-  const dText = document.getElementById('dText');
-  const dHint = document.getElementById('dHint');
-
-  // Win overlay refs
-  const winOverlay = document.getElementById('winOverlay');
-  const trophyBtn = document.getElementById('trophyBtn');
-  const winModal = document.getElementById('winModal');
-  const winYes1 = document.getElementById('winYes1');
-  const winYes2 = document.getElementById('winYes2');
-  const winClose = document.getElementById('winClose');
-
   function resize(){
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    c.width = Math.floor(window.innerWidth * dpr);
-    c.height = Math.floor(window.innerHeight * dpr);
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
     ctx.setTransform(dpr,0,0,dpr,0,0);
 
     conf.width = Math.floor(window.innerWidth * dpr);
@@ -424,6 +447,35 @@
   }
   window.addEventListener('resize', resize);
   resize();
+
+  // ===== UI refs =====
+  const ui = {
+    progress: document.getElementById('progress'),
+    inv: document.getElementById('inv'),
+    sound: document.getElementById('sound'),
+    pause: document.getElementById('pause'),
+    restart: document.getElementById('restart'),
+  };
+
+  const dialog = document.getElementById('dialog');
+  const dName = document.getElementById('dName');
+  const dText = document.getElementById('dText');
+  const dHint = document.getElementById('dHint');
+
+  const prompt = document.getElementById('prompt');
+  const pTitle = document.getElementById('pTitle');
+  const pBody = document.getElementById('pBody');
+  const pInput = document.getElementById('pInput');
+  const pOk = document.getElementById('pOk');
+  const pCancel = document.getElementById('pCancel');
+  const pMsg = document.getElementById('pMsg');
+
+  const winOverlay = document.getElementById('winOverlay');
+  const trophyBtn = document.getElementById('trophyBtn');
+  const winModal = document.getElementById('winModal');
+  const winYes1 = document.getElementById('winYes1');
+  const winYes2 = document.getElementById('winYes2');
+  const winClose = document.getElementById('winClose');
 
   // ===== Audio =====
   let soundOn = false;
@@ -446,7 +498,7 @@
   });
 
   // ===== Controls =====
-  const keys = {up:false,down:false,left:false,right:false,a:false};
+  const keys = {up:false,down:false,left:false,right:false,a:false,b:false};
   let paused = false;
 
   window.addEventListener('keydown', (e)=>{
@@ -456,6 +508,7 @@
     if(k==='arrowleft'||k==='a') keys.left=true;
     if(k==='arrowright'||k==='d') keys.right=true;
     if(k===' ') { keys.a=true; e.preventDefault(); }
+    if(k==='escape') keys.b=true;
     if(k==='p') paused = !paused;
   });
   window.addEventListener('keyup', (e)=>{
@@ -465,167 +518,275 @@
     if(k==='arrowleft'||k==='a') keys.left=false;
     if(k==='arrowright'||k==='d') keys.right=false;
     if(k===' ') keys.a=false;
+    if(k==='escape') keys.b=false;
   });
 
-  // Touch joystick
-  const joy = document.getElementById('joy');
-  const knob = document.getElementById('knob');
+  // Touch D-pad (emulator-ish)
+  const dpad = document.getElementById('dpad');
+  const nub = document.getElementById('nub');
   const aBtn = document.getElementById('aBtn');
-  const pBtn = document.getElementById('pBtn');
+  const bBtn = document.getElementById('bBtn');
+  const selBtn = document.getElementById('selBtn');
+  const staBtn = document.getElementById('staBtn');
 
-  let joyActive=false, joyId=null;
-  let joyVec={x:0,y:0};
-  const joyRadius = 64;
+  let dpadActive=false, dpadId=null;
+  let dvec={x:0,y:0};
+  const dRadius = 54;
 
-  joy.addEventListener('pointerdown', (e)=>{
-    joyActive=true; joyId=e.pointerId; joy.setPointerCapture(joyId);
-    moveJoy(e);
+  dpad.addEventListener('pointerdown', (e)=>{
+    dpadActive=true; dpadId=e.pointerId; dpad.setPointerCapture(dpadId);
+    moveDpad(e);
   });
-  joy.addEventListener('pointermove', (e)=>{ if(joyActive && e.pointerId===joyId) moveJoy(e); });
-  joy.addEventListener('pointerup', (e)=>{ if(e.pointerId===joyId) resetJoy(); });
-  joy.addEventListener('pointercancel', ()=>resetJoy());
+  dpad.addEventListener('pointermove', (e)=>{ if(dpadActive && e.pointerId===dpadId) moveDpad(e); });
+  dpad.addEventListener('pointerup', (e)=>{ if(e.pointerId===dpadId) resetDpad(); });
+  dpad.addEventListener('pointercancel', ()=>resetDpad());
 
-  function moveJoy(e){
-    const r = joy.getBoundingClientRect();
+  function moveDpad(e){
+    const r = dpad.getBoundingClientRect();
     const cx = r.left + r.width/2;
     const cy = r.top + r.height/2;
     const dx = e.clientX - cx;
     const dy = e.clientY - cy;
     const len = Math.hypot(dx,dy) || 1;
-    const k = Math.min(1, len/joyRadius);
-    joyVec.x = (dx/len)*k;
-    joyVec.y = (dy/len)*k;
-    knob.style.transform = `translate(calc(-50% + ${joyVec.x*joyRadius}px), calc(-50% + ${joyVec.y*joyRadius}px))`;
+    const k = Math.min(1, len/dRadius);
+    dvec.x = (dx/len)*k;
+    dvec.y = (dy/len)*k;
+    nub.style.transform = `translate(calc(-50% + ${dvec.x*dRadius}px), calc(-50% + ${dvec.y*dRadius}px))`;
   }
-  function resetJoy(){
-    joyActive=false; joyId=null; joyVec={x:0,y:0};
-    knob.style.transform = `translate(-50%,-50%)`;
+  function resetDpad(){
+    dpadActive=false; dpadId=null; dvec={x:0,y:0};
+    nub.style.transform = `translate(-50%,-50%)`;
   }
 
   aBtn.addEventListener('pointerdown', (e)=>{ e.preventDefault(); keys.a=true; });
   aBtn.addEventListener('pointerup', (e)=>{ e.preventDefault(); keys.a=false; });
   aBtn.addEventListener('pointercancel', ()=>{ keys.a=false; });
 
+  bBtn.addEventListener('pointerdown', (e)=>{ e.preventDefault(); keys.b=true; });
+  bBtn.addEventListener('pointerup', (e)=>{ e.preventDefault(); keys.b=false; });
+  bBtn.addEventListener('pointercancel', ()=>{ keys.b=false; });
+
+  selBtn.addEventListener('click', ()=>{ /* reserved */ beep(520,0.05); });
+  staBtn.addEventListener('click', ()=>{ paused = !paused; });
+
   ui.pause.addEventListener('click', ()=> paused = !paused);
-  pBtn.addEventListener('click', ()=> paused = !paused);
-  ui.restart.addEventListener('click', ()=> startGame());
+  ui.restart.addEventListener('click', ()=> resetGame());
 
-  // ===== Map (tile-based) =====
-  const TILE = 28;
-  const MAP_W = 28;
-  const MAP_H = 18;
-
-  const map = [];
-  for(let y=0;y<MAP_H;y++){
-    const row=[];
-    for(let x=0;x<MAP_W;x++){
-      let t=0;
-      const border = (x===0||y===0||x===MAP_W-1||y===MAP_H-1);
-      if(border) t=1;
-      if((x===10 && y>2 && y<14) || (y===7 && x>3 && x<24)) t=1;
-      if(!t && ((x+y)%11===0 || (x*y)%29===0)) t=2;
-      row.push(t);
-    }
-    map.push(row);
-  }
-  map[7][15]=0; map[7][16]=0; map[7][17]=0;
-
-  function isWall(tx,ty){
-    if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H) return true;
-    return map[ty][tx]===1;
-  }
-
-  // ===== Helpers =====
+  // ===== Game helpers =====
   const rnd=(a,b)=>a+Math.random()*(b-a);
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const dist=(ax,ay,bx,by)=>Math.hypot(ax-bx, ay-by);
 
-  // ===== Game State =====
-  let game=null;
+  // ===== Map (tile-based) =====
+  const TILE = 26; // a bit smaller for more GBA-ish density
+  const MAP_W = 32;
+  const MAP_H = 20;
 
-  function startGame(){
-    startOv.style.display='none';
-    dialog.style.display='none';
-    winOverlay.style.display='none';
-    winModal.style.display='none';
+  // tile types:
+  // 0 grass, 1 fence/wall, 2 path, 3 flower, 4 sign, 5 gate (locked), 6 gate open, 7 terminal, 8 chest
+  const map = Array.from({length:MAP_H}, (_,y)=>Array.from({length:MAP_W}, (_,x)=>{
+    const border = (x===0||y===0||x===MAP_W-1||y===MAP_H-1);
+    if(border) return 1;
+    // base grass
+    return 0;
+  }));
+
+  // add a path stripe
+  for(let x=2; x<MAP_W-2; x++){
+    map[9][x]=2;
+  }
+  // add some fences and shrubs blocks
+  for(let y=3;y<9;y++) map[y][14]=1;
+  for(let y=11;y<17;y++) map[y][18]=1;
+
+  // make openings
+  map[6][14]=2;
+  map[14][18]=2;
+
+  // decorate with flowers
+  const flowers = [
+    [6,6],[7,6],[6,7],
+    [24,6],[25,6],
+    [9,14],[10,14],[9,15],
+    [22,14],[23,14],[22,15]
+  ];
+  for(const [x,y] of flowers) map[y][x]=3;
+
+  // Checkpoints on the path:
+  // CP1 sign, CP2 terminal, CP3 chest
+  map[9][6]=4;   // sign
+  map[9][16]=7;  // terminal
+  map[9][26]=8;  // chest
+
+  // gates (locked) after each checkpoint
+  map[9][10]=5;  // gate1
+  map[9][20]=5;  // gate2
+  map[9][30]=5;  // gate3 near end (but border is wall; so put at 29)
+  map[9][29]=5;
+
+  function isSolidTile(t){
+    return (t===1 || t===5); // wall or locked gate
+  }
+
+  // ===== Game state =====
+  const ANSWERS = ["JUPITER","SPARK","GT"]; // from your physical riddles
+  let state = {
+    player:{x:4*TILE, y:8*TILE, face:'down', spd:140},
+    cam:{x:0,y:0},
+    unlocked:[false,false,false], // gates opened
+    keysFound:[],                 // just for HUD display
+    dialogQueue:[],
+    canInteract:true,
+    aLatch:false,
+    bLatch:false,
+    promptOpen:false,
+    win:false
+  };
+
+  function resetGame(){
+    hideWin();
+    closePrompt();
+    closeDialog();
     paused=false;
-
-    game = {
-      running:true,
+    state = {
+      player:{x:4*TILE, y:8*TILE, face:'down', spd:140},
       cam:{x:0,y:0},
-      player:{x:3*TILE, y:3*TILE, spd:160, face:'down'},
-      inventory:[],
-      questReadyToWin:false,
+      unlocked:[false,false,false],
+      keysFound:[],
       dialogQueue:[],
       canInteract:true,
       aLatch:false,
-      npcs:[
-        {
-          id:'tati',
-          name:'Tati',
-          x:24*TILE, y:4*TILE,
-          lines:[
-            "Lucas… te tengo una quest. 👀",
-            "Tráeme 3 reliquias: 💜, ⭐ y 🍓.",
-            "Cuando vuelvas… te tengo una sorpresa 😉"
-          ]
-        },
-        {
-          id:'sign1',
-          name:'Letrero',
-          x:5*TILE, y:14*TILE,
-          lines:[
-            "Tip: Acércate a lo que brille y pulsa A.",
-            "Si te pierdes, busca el camino con menos paredes."
-          ]
-        }
-      ],
-      items:[
-        {id:'heart', icon:'💜', name:'Reliquia Morada', x:6*TILE, y:5*TILE, taken:false},
-        {id:'star',  icon:'⭐', name:'Estrella', x:20*TILE, y:13*TILE, taken:false},
-        {id:'berry', icon:'🍓', name:'Berry', x:25*TILE, y:15*TILE, taken:false},
-      ],
+      bLatch:false,
+      promptOpen:false,
+      win:false
     };
-
     updateHUD();
   }
 
   function updateHUD(){
-    const got = game.inventory.length;
-    ui.quest.textContent = `Quest: ${got}/3 reliquias`;
-    ui.inv.textContent = `Inv: ${game.inventory.length? game.inventory.map(i=>i.icon).join(' ') : '—'}`;
+    const done = state.unlocked.filter(Boolean).length;
+    ui.progress.textContent = `Puertas: ${done}/3`;
+    ui.inv.textContent = `Keys: ${state.keysFound.length ? state.keysFound.join(' · ') : '—'}`;
   }
 
-  // ===== Dialogue =====
+  // ===== Dialog =====
   function openDialog(name, lines){
-    game.dialogQueue = lines.slice();
+    state.dialogQueue = lines.slice();
     dName.textContent = name;
-    dHint.textContent = "Pulsa A pa’ continuar";
+    dHint.textContent = "Pulsa A pa’ continuar · B pa’ cerrar";
     dialog.style.display='block';
     nextDialogLine();
   }
   function nextDialogLine(){
-    const line = game.dialogQueue.shift();
+    const line = state.dialogQueue.shift();
     if(!line){
-      dialog.style.display='none';
-      game.canInteract = true;
+      closeDialog();
       return;
     }
     dText.textContent = line;
     beep(660,0.03,'square',0.03);
   }
+  function closeDialog(){
+    dialog.style.display='none';
+    state.canInteract = true;
+    state.dialogQueue = [];
+  }
 
-  // ===== Particles =====
-  const parts=[];
-  function particleBurst(x,y){
-    for(let i=0;i<16;i++){
-      parts.push({
-        x,y, vx:rnd(-140,140), vy:rnd(-190,90),
-        life:rnd(0.35,0.7), r:rnd(2,4),
-        c: ['rgba(184,107,255,.95)','rgba(255,92,200,.95)','rgba(255,211,106,.95)','rgba(82,255,168,.95)'][Math.floor(rnd(0,4))]
-      });
+  // ===== Prompt modal (code entry) =====
+  let currentCheckpoint = -1;
+
+  function openPrompt(cpIndex){
+    currentCheckpoint = cpIndex;
+    state.promptOpen = true;
+    prompt.style.display='flex';
+    pInput.value='';
+    pMsg.style.display='none';
+    pTitle.textContent = `Checkpoint ${cpIndex+1}`;
+    pBody.textContent = `Escribe la clave del papel #${cpIndex+1}.`;
+    setTimeout(()=>pInput.focus(), 50);
+  }
+  function closePrompt(){
+    prompt.style.display='none';
+    state.promptOpen = false;
+    currentCheckpoint = -1;
+  }
+  function setPromptMsg(text, ok){
+    pMsg.style.display='block';
+    pMsg.textContent = text;
+    pMsg.className = `msg ${ok?'ok':'bad'}`;
+  }
+
+  pCancel.addEventListener('click', closePrompt);
+  pOk.addEventListener('click', validatePrompt);
+  pInput.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') validatePrompt();
+    if(e.key === 'Escape') closePrompt();
+  });
+
+  function validatePrompt(){
+    if(currentCheckpoint < 0) return;
+    const got = (pInput.value||'').trim().toUpperCase();
+    const expected = ANSWERS[currentCheckpoint];
+
+    if(got === expected){
+      beep(880,0.08);
+      setPromptMsg("✅ Correcto. Puerta desbloqueada.", true);
+      unlockGate(currentCheckpoint);
+      // show nice dialog and close
+      setTimeout(()=>{
+        closePrompt();
+        openDialog("Sistema", [
+          `Clave aceptada: ${expected}`,
+          "Sigue avanzando por el camino 😉"
+        ]);
+      }, 450);
+    } else {
+      beep(220,0.08);
+      setPromptMsg("❌ Nope. Revisa la adivinanza del papel.", false);
     }
   }
+
+  function unlockGate(i){
+    if(state.unlocked[i]) return;
+    state.unlocked[i] = true;
+    state.keysFound.push(ANSWERS[i]);
+    updateHUD();
+
+    // Replace gate tile with open gate (walkable)
+    const gateX = (i===0?10 : i===1?20 : 29);
+    map[9][gateX] = 6;
+
+    // confetti mini burst
+    burstConfetti(60);
+  }
+
+  // ===== Win Screen =====
+  function showWin(){
+    paused = true;
+    state.win = true;
+    winModal.style.display = 'none';
+    winOverlay.style.display = 'flex';
+    burstConfetti(180);
+    beep(980,0.10);
+  }
+  function hideWin(){
+    winOverlay.style.display='none';
+    winModal.style.display='none';
+  }
+
+  trophyBtn.addEventListener('click', ()=>{
+    winModal.style.display = (winModal.style.display === 'block') ? 'none' : 'block';
+    beep(740,0.06);
+  });
+
+  function yesAction(){
+    burstConfetti(220);
+    beep(880,0.10);
+    alert("💜 Girlfriend_mode = true ✅");
+  }
+  winYes1.addEventListener('click', yesAction);
+  winYes2.addEventListener('click', yesAction);
+  winClose.addEventListener('click', hideWin);
 
   // ===== Confetti =====
   let confetti = [];
@@ -640,11 +801,11 @@
       rot:rnd(0,Math.PI),
       vr:rnd(-2,2),
       c:colors[Math.floor(rnd(0,colors.length))],
-      life:rnd(1.4, 2.6)
+      life:rnd(1.2, 2.4)
     };
   }
-  function burstConfetti(){
-    confetti = Array.from({length:180}, piece);
+  function burstConfetti(n=160){
+    confetti = confetti.concat(Array.from({length:n}, piece));
   }
   function drawConfetti(){
     if(confetti.length===0) { cctx.clearRect(0,0,window.innerWidth,window.innerHeight); return; }
@@ -666,102 +827,26 @@
     confetti = confetti.filter(p=>p.life>0 && p.y < window.innerHeight+40);
   }
 
-  // ===== WIN SCREEN =====
-  function showWin(){
-    paused = true;
-    winModal.style.display = 'none';
-    winOverlay.style.display = 'flex';
-    burstConfetti();
-    beep(880,0.08);
-  }
-  function hideWin(){
-    winOverlay.style.display = 'none';
-    winModal.style.display = 'none';
-  }
-
-  trophyBtn.addEventListener('click', ()=>{
-    winModal.style.display = (winModal.style.display === 'block') ? 'none' : 'block';
-    beep(740,0.06);
-  });
-
-  function yesAction(){
-    burstConfetti();
-    beep(980,0.10);
-    alert("💜 Girlfriend_mode = true ✅");
-  }
-  winYes1.addEventListener('click', yesAction);
-  winYes2.addEventListener('click', yesAction);
-  winClose.addEventListener('click', hideWin);
-
-  // ===== Interaction =====
-  function tryInteract(){
-    if(!game.canInteract) return;
-
-    const p = game.player;
-
-    // if dialog open, A advances
-    if(dialog.style.display==='block'){
-      nextDialogLine();
-      return;
-    }
-
-    // nearest NPC
-    const npc = game.npcs.find(n => dist(p.x,p.y,n.x,n.y) < 24);
-    if(npc){
-      game.canInteract = false;
-
-      // If it's Tati and all items are collected → WIN
-      if(npc.id==='tati' && game.inventory.length===3){
-        openDialog("Tati", [
-          "Ok… veo que completaste la quest. ✅",
-          "Ahora sí… reclama tu trofeo 🏆"
-        ]);
-        game.questReadyToWin = true;
-        return;
-      }
-
-      openDialog(npc.name, npc.lines);
-      return;
-    }
-
-    // nearest item
-    const it = game.items.find(i => !i.taken && dist(p.x,p.y,i.x,i.y) < 22);
-    if(it){
-      it.taken = true;
-      game.inventory.push(it);
-      updateHUD();
-      particleBurst(it.x, it.y);
-      beep(740,0.06,'square',0.05);
-
-      game.canInteract = false;
-      openDialog("Sistema", [
-        `Obtuviste: ${it.icon} ${it.name}`,
-        (game.inventory.length<3)
-          ? "Sigue buscando… te faltan reliquias."
-          : "¡Listo! Vuelve donde Tati pa’ ganar."
-      ]);
-      return;
-    }
-  }
-
-  // ===== Movement + Collision =====
+  // ===== Movement =====
   function getMoveVec(){
     let x=0,y=0;
     if(keys.left) x-=1;
     if(keys.right) x+=1;
     if(keys.up) y-=1;
     if(keys.down) y+=1;
-    x += joyVec.x;
-    y += joyVec.y;
+
+    // map dpad vector to digital-ish movement
+    x += dvec.x;
+    y += dvec.y;
 
     const dz = 0.18;
-    if(Math.hypot(x,y) < dz) return {x:0,y:0};
-    const len = Math.hypot(x,y);
-    return {x:x/len, y:y/len};
+    const l = Math.hypot(x,y);
+    if(l < dz) return {x:0,y:0};
+    return {x:x/l, y:y/l};
   }
 
   function movePlayer(dt){
-    const p = game.player;
+    const p = state.player;
     const mv = getMoveVec();
     const spd = p.spd;
 
@@ -770,10 +855,8 @@
     if(Math.abs(mv.x) > Math.abs(mv.y)) p.face = (mv.x>0?'right':'left');
     else p.face = (mv.y>0?'down':'up');
 
-    let nx = p.x + mv.x*spd*dt;
-    let ny = p.y + mv.y*spd*dt;
-
     const r = 9;
+
     function collides(px,py){
       const corners = [
         {x:px-r,y:py-r},{x:px+r,y:py-r},{x:px-r,y:py+r},{x:px+r,y:py+r}
@@ -781,44 +864,233 @@
       return corners.some(c=>{
         const tx = Math.floor(c.x / TILE);
         const ty = Math.floor(c.y / TILE);
-        return isWall(tx,ty);
+        const t = (map[ty] && map[ty][tx] !== undefined) ? map[ty][tx] : 1;
+        return isSolidTile(t);
       });
     }
+
+    let nx = p.x + mv.x*spd*dt;
+    let ny = p.y + mv.y*spd*dt;
 
     if(!collides(nx, p.y)) p.x = nx;
     if(!collides(p.x, ny)) p.y = ny;
 
+    // clamp inside map
     p.x = clamp(p.x, TILE*1.2, TILE*(MAP_W-1.2));
     p.y = clamp(p.y, TILE*1.2, TILE*(MAP_H-1.2));
   }
 
-  // ===== Camera =====
   function updateCamera(){
-    const p = game.player;
+    const p = state.player;
     const targetX = p.x - window.innerWidth/2;
     const targetY = p.y - window.innerHeight/2;
     const maxX = MAP_W*TILE - window.innerWidth;
     const maxY = MAP_H*TILE - window.innerHeight;
-    game.cam.x = clamp(targetX, 0, Math.max(0,maxX));
-    game.cam.y = clamp(targetY, 0, Math.max(0,maxY));
+    state.cam.x = clamp(targetX, 0, Math.max(0,maxX));
+    state.cam.y = clamp(targetY, 0, Math.max(0,maxY));
   }
 
-  // ===== Render helpers =====
-  function roundRect(x, y, w, h, r, fill, stroke){
-    const rr = Math.min(r, w/2, h/2);
-    ctx.beginPath();
-    ctx.moveTo(x+rr,y);
-    ctx.arcTo(x+w,y, x+w,y+h, rr);
-    ctx.arcTo(x+w,y+h, x,y+h, rr);
-    ctx.arcTo(x,y+h, x,y, rr);
-    ctx.arcTo(x,y, x+w,y, rr);
-    ctx.closePath();
-    if(fill) ctx.fill();
-    if(stroke) ctx.stroke();
+  // ===== Interactions =====
+  function tileAtWorld(x,y){
+    const tx = Math.floor(x / TILE);
+    const ty = Math.floor(y / TILE);
+    if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H) return {t:1, tx, ty};
+    return {t: map[ty][tx], tx, ty};
+  }
+
+  function frontTile(){
+    const p = state.player;
+    let fx = 0, fy = 0;
+    if(p.face==='up') fy = -1;
+    if(p.face==='down') fy = 1;
+    if(p.face==='left') fx = -1;
+    if(p.face==='right') fx = 1;
+    const x = p.x + fx*TILE*0.85;
+    const y = p.y + fy*TILE*0.85;
+    return tileAtWorld(x,y);
+  }
+
+  function interact(){
+    if(!state.canInteract) return;
+    if(state.promptOpen) return;
+
+    if(dialog.style.display==='block'){
+      nextDialogLine();
+      return;
+    }
+
+    const ft = frontTile();
+    const {t} = ft;
+
+    // Checkpoints
+    if(t === 4){ // sign checkpoint 1
+      openDialog("Letrero", [
+        "Checkpoint 1.",
+        "Tienes un papel con una adivinanza.",
+        "Cuando la resuelvas, entra la clave aquí."
+      ]);
+      setTimeout(()=>openPrompt(0), 150);
+      return;
+    }
+    if(t === 7){ // terminal checkpoint 2
+      openDialog("Terminal", [
+        "Checkpoint 2.",
+        "Introduce la clave del papel #2."
+      ]);
+      setTimeout(()=>openPrompt(1), 150);
+      return;
+    }
+    if(t === 8){ // chest checkpoint 3
+      openDialog("Cofre", [
+        "Checkpoint 3.",
+        "Última clave… papel #3."
+      ]);
+      setTimeout(()=>openPrompt(2), 150);
+      return;
+    }
+
+    // If standing at end after 3 unlocked, win
+    if(state.unlocked.every(Boolean)){
+      const p = state.player;
+      // near the end gate area
+      if(dist(p.x,p.y, 30*TILE, 9*TILE) < 60){
+        showWin();
+        return;
+      }
+    }
+
+    // default hint
+    openDialog("Sistema", [
+      "Nada por aquí.",
+      "Sigue por el camino y busca los checkpoints."
+    ]);
+  }
+
+  // ===== Main loop =====
+  function tickInputLatches(){
+    // A latch
+    if(keys.a && !state.aLatch){
+      state.aLatch = true;
+      interact();
+    }
+    if(!keys.a) state.aLatch = false;
+
+    // B latch closes dialog/prompt
+    if(keys.b && !state.bLatch){
+      state.bLatch = true;
+      if(state.promptOpen) closePrompt();
+      else if(dialog.style.display==='block') closeDialog();
+    }
+    if(!keys.b) state.bLatch = false;
+  }
+
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(0.033, (now-last)/1000);
+    last = now;
+
+    if(!paused){
+      tickInputLatches();
+      if(!state.promptOpen && dialog.style.display!=='block' && !state.win){
+        movePlayer(dt);
+        updateCamera();
+      }
+    }
+
+    render(dt);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ===== Render =====
+  function drawTile(sx,sy,t){
+    // Basic tiles with pixel-ish look
+    if(t===0){ // grass
+      ctx.fillStyle = '#5fbf6b';
+      ctx.fillRect(sx,sy,TILE,TILE);
+      ctx.fillStyle = 'rgba(0,0,0,.08)';
+      ctx.fillRect(sx,sy,TILE,TILE);
+      // sprinkles
+      ctx.fillStyle = 'rgba(255,255,255,.10)';
+      ctx.fillRect(sx+4,sy+6,2,2);
+      ctx.fillRect(sx+16,sy+14,2,2);
+    }
+    if(t===2){ // path
+      ctx.fillStyle = '#e8d38a';
+      ctx.fillRect(sx,sy,TILE,TILE);
+      ctx.fillStyle = 'rgba(0,0,0,.06)';
+      ctx.fillRect(sx,sy,TILE,TILE);
+    }
+    if(t===1){ // fence/wall
+      ctx.fillStyle = '#7b8a96';
+      ctx.fillRect(sx,sy,TILE,TILE);
+      ctx.fillStyle = 'rgba(255,255,255,.16)';
+      ctx.fillRect(sx+2,sy+2,TILE-4,4);
+      ctx.fillStyle = 'rgba(0,0,0,.18)';
+      ctx.fillRect(sx+2,sy+TILE-6,TILE-4,4);
+    }
+    if(t===3){ // flower
+      ctx.fillStyle = '#5fbf6b';
+      ctx.fillRect(sx,sy,TILE,TILE);
+      ctx.fillStyle = '#ff5cc8';
+      ctx.fillRect(sx+10,sy+10,6,6);
+      ctx.fillStyle = '#ffd36a';
+      ctx.fillRect(sx+12,sy+12,2,2);
+    }
+    if(t===4){ // sign
+      ctx.fillStyle = '#e8d38a';
+      ctx.fillRect(sx,sy,TILE,TILE);
+      ctx.fillStyle = '#8a5a2b';
+      ctx.fillRect(sx+8,sy+6,10,12);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(sx+9,sy+8,8,3);
+      ctx.fillStyle = '#ff5cc8';
+      ctx.fillRect(sx+9,sy+12,6,2);
+    }
+    if(t===7){ // terminal
+      ctx.fillStyle = '#e8d38a';
+      ctx.fillRect(sx,sy,TILE,TILE);
+      ctx.fillStyle = '#3a2a55';
+      ctx.fillRect(sx+7,sy+6,12,14);
+      ctx.fillStyle = '#b86bff';
+      ctx.fillRect(sx+9,sy+9,8,4);
+      ctx.fillStyle = '#52ffa8';
+      ctx.fillRect(sx+9,sy+15,4,2);
+    }
+    if(t===8){ // chest
+      ctx.fillStyle = '#e8d38a';
+      ctx.fillRect(sx,sy,TILE,TILE);
+      ctx.fillStyle = '#7b2a2a';
+      ctx.fillRect(sx+7,sy+10,12,10);
+      ctx.fillStyle = '#ffd36a';
+      ctx.fillRect(sx+7,sy+13,12,2);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(sx+12,sy+13,2,4);
+    }
+    if(t===5){ // gate locked
+      ctx.fillStyle = '#e8d38a';
+      ctx.fillRect(sx,sy,TILE,TILE);
+      ctx.fillStyle = '#2b2b2b';
+      ctx.fillRect(sx+10,sy+4,6,18);
+      ctx.fillStyle = '#ff5a78';
+      ctx.fillRect(sx+9,sy+10,8,5);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(sx+11,sy+12,4,1);
+    }
+    if(t===6){ // gate open
+      ctx.fillStyle = '#e8d38a';
+      ctx.fillRect(sx,sy,TILE,TILE);
+      ctx.fillStyle = 'rgba(0,0,0,.06)';
+      ctx.fillRect(sx,sy,TILE,TILE);
+      ctx.fillStyle = '#52ffa8';
+      ctx.fillRect(sx+10,sy+4,6,18);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(sx+11,sy+12,4,1);
+    }
   }
 
   function drawMap(){
-    const cam = game.cam;
+    const cam = state.cam;
     const startX = Math.floor(cam.x / TILE);
     const startY = Math.floor(cam.y / TILE);
     const endX = Math.ceil((cam.x + window.innerWidth) / TILE);
@@ -830,188 +1102,91 @@
         const t = map[y][x];
         const sx = x*TILE - cam.x;
         const sy = y*TILE - cam.y;
-
-        if(t===1){
-          ctx.fillStyle = 'rgba(255,255,255,.10)';
-          ctx.fillRect(sx,sy,TILE,TILE);
-          ctx.strokeStyle = 'rgba(255,255,255,.14)';
-          ctx.strokeRect(sx+0.5,sy+0.5,TILE-1,TILE-1);
-        }else if(t===2){
-          ctx.fillStyle = 'rgba(184,107,255,.06)';
-          ctx.fillRect(sx,sy,TILE,TILE);
-        }else{
-          ctx.fillStyle = 'rgba(0,0,0,.08)';
-          ctx.fillRect(sx,sy,TILE,TILE);
-        }
+        drawTile(sx,sy,t);
       }
     }
-  }
 
-  function drawItems(){
-    const cam=game.cam;
-    for(const it of game.items){
-      if(it.taken) continue;
-      const sx = it.x - cam.x;
-      const sy = it.y - cam.y;
-
-      ctx.globalAlpha = 0.45 + 0.25*Math.sin(performance.now()*0.006);
-      ctx.fillStyle = 'rgba(255,211,106,.25)';
-      ctx.beginPath();
-      ctx.arc(sx, sy, 18, 0, Math.PI*2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-
-      ctx.font = '20px system-ui';
-      ctx.textAlign='center';
-      ctx.textBaseline='middle';
-      ctx.fillText(it.icon, sx, sy);
-    }
-  }
-
-  function drawEntity(x,y,isTati){
-    const cam=game.cam;
-    const sx = x - cam.x;
-    const sy = y - cam.y;
-
-    ctx.fillStyle = isTati ? 'rgba(184,107,255,.35)' : 'rgba(255,255,255,.10)';
-    roundRect(sx-12, sy-14, 24, 28, 8, true, false);
-
-    ctx.font = '18px system-ui';
-    ctx.textAlign='center';
-    ctx.textBaseline='middle';
-    ctx.fillStyle='rgba(255,255,255,.95)';
-    ctx.fillText(isTati?'💜':'ℹ️', sx, sy+1);
-  }
-
-  function drawNPCs(){
-    for(const n of game.npcs){
-      const isTati = n.id==='tati';
-      drawEntity(n.x, n.y, isTati);
-
-      const p=game.player;
-      if(dist(p.x,p.y,n.x,n.y) < 52){
-        const cam=game.cam;
-        const sx = n.x - cam.x;
-        const sy = n.y - cam.y;
-        ctx.font='12px system-ui';
-        ctx.textAlign='center';
-        ctx.fillStyle='rgba(255,255,255,.85)';
-        ctx.fillText(n.name, sx, sy-24);
-      }
-    }
+    // subtle vignette
+    const grd = ctx.createRadialGradient(window.innerWidth/2, window.innerHeight/2, 120, window.innerWidth/2, window.innerHeight/2, Math.max(window.innerWidth,window.innerHeight));
+    grd.addColorStop(0,'rgba(0,0,0,0)');
+    grd.addColorStop(1,'rgba(0,0,0,.25)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
   }
 
   function drawPlayer(){
-    const p=game.player;
-    const cam=game.cam;
+    const p = state.player;
+    const cam = state.cam;
     const sx = p.x - cam.x;
     const sy = p.y - cam.y;
 
-    ctx.fillStyle='rgba(0,0,0,.25)';
+    // shadow
+    ctx.fillStyle='rgba(0,0,0,.22)';
     ctx.beginPath();
-    ctx.ellipse(sx, sy+12, 12, 6, 0, 0, Math.PI*2);
+    ctx.ellipse(sx, sy+10, 10, 5, 0, 0, Math.PI*2);
     ctx.fill();
 
-    ctx.fillStyle='rgba(255,92,200,.90)';
-    roundRect(sx-12, sy-16, 24, 32, 9, true, false);
+    // body (red cap vibe)
+    ctx.fillStyle = '#d84b4b';
+    ctx.fillRect(sx-8, sy-16, 16, 16);
+    ctx.fillStyle = '#2b2b2b';
+    ctx.fillRect(sx-8, sy, 16, 14);
 
-    ctx.fillStyle='rgba(255,255,255,.85)';
+    // cap
+    ctx.fillStyle = '#ff5a78';
+    ctx.fillRect(sx-9, sy-22, 18, 8);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(sx-4, sy-20, 8, 3);
+
+    // face dot indicates direction
+    ctx.fillStyle = '#fff';
     const fx = p.face==='right'? 6 : p.face==='left'? -6 : 0;
-    const fy = p.face==='down'? 6 : p.face==='up'? -6 : 0;
-    ctx.beginPath();
-    ctx.arc(sx+fx, sy-2+fy, 3, 0, Math.PI*2);
-    ctx.fill();
+    const fy = p.face==='down'? 4 : p.face==='up'? -4 : 0;
+    ctx.fillRect(sx+fx-1, sy-6+fy-1, 2, 2);
   }
-
-  function drawParticles(dt){
-    for(let i=parts.length-1;i>=0;i--){
-      const p=parts[i];
-      p.life -= dt;
-      p.x += p.vx*dt;
-      p.y += p.vy*dt;
-      p.vy += 540*dt;
-      p.vx *= (1 - 1.6*dt);
-
-      const cam=game.cam;
-      ctx.fillStyle=p.c;
-      ctx.fillRect(p.x-cam.x, p.y-cam.y, p.r, p.r);
-
-      if(p.life<=0) parts.splice(i,1);
-    }
-  }
-
-  // ===== Loop =====
-  let last = performance.now();
-  function loop(now){
-    const dt = Math.min(0.033, (now-last)/1000);
-    last = now;
-
-    if(game && game.running && !paused){
-      if(keys.a && !game.aLatch){
-        game.aLatch = true;
-        tryInteract();
-      }
-      if(!keys.a) game.aLatch = false;
-
-      movePlayer(dt);
-      updateCamera();
-
-      // If quest ready and dialog just closed → show YOU WIN
-      if(game.questReadyToWin && dialog.style.display==='none'){
-        game.questReadyToWin = false;
-        showWin();
-      }
-    }
-
-    render(dt);
-    requestAnimationFrame(loop);
-  }
-  requestAnimationFrame(loop);
 
   function render(dt){
     ctx.clearRect(0,0,window.innerWidth,window.innerHeight);
 
-    ctx.globalAlpha = 0.55;
-    for(let i=0;i<90;i++){
-      const x=(i*173)%window.innerWidth;
-      const y=(i*97)%window.innerHeight;
-      ctx.fillStyle = (i%9===0) ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.5)';
-      ctx.fillRect(x,y,2,2);
-    }
-    ctx.globalAlpha = 1;
-
-    if(!game) { drawConfetti(); return; }
+    // sky-ish overlay behind map (like emulator capture)
+    ctx.fillStyle = 'rgba(121,200,255,.10)';
+    ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
 
     drawMap();
-    drawItems();
-    drawNPCs();
     drawPlayer();
-    drawParticles(dt);
 
-    if(paused){
+    if(paused && !state.win){
       ctx.globalAlpha=0.70;
       ctx.fillStyle='rgba(0,0,0,.45)';
       ctx.fillRect(0,0,window.innerWidth, window.innerHeight);
       ctx.globalAlpha=1;
       ctx.fillStyle='#fff';
-      ctx.font='900 36px system-ui';
+      ctx.font='900 34px system-ui';
       ctx.textAlign='center';
       ctx.fillText('PAUSA ⏸', window.innerWidth/2, window.innerHeight/2);
       ctx.font='800 14px system-ui';
       ctx.fillStyle='rgba(255,255,255,.75)';
-      ctx.fillText('Dale ⏸ / Pause pa’ seguir', window.innerWidth/2, window.innerHeight/2 + 28);
+      ctx.fillText('START pa’ seguir', window.innerWidth/2, window.innerHeight/2 + 28);
     }
 
     drawConfetti();
   }
 
-  // ===== UI wiring =====
-  howBtn.addEventListener('click', ()=>{ howTxt.style.display = (howTxt.style.display==='none'?'block':'none'); });
-  playBtn.addEventListener('click', ()=> startGame());
+  // ===== Hook some buttons =====
+  document.getElementById('pause').addEventListener('click', ()=> paused=!paused);
+  document.getElementById('restart').addEventListener('click', resetGame);
+  staBtn.addEventListener('click', ()=> paused=!paused);
 
-  // Init
-  ui.sound.textContent = 'Sound: OFF';
+  // ===== Prompt close with B =====
+  function closePromptOnB(){
+    if(state.promptOpen) closePrompt();
+  }
+
+  // ===== Start state =====
+  updateHUD();
+
 })();
 </script>
 </body>
 </html>
+
